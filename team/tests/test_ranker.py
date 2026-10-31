@@ -190,3 +190,32 @@ def test_run_epoch_records_the_candidates_it_used(monkeypatch):
         assert row["flipped"] and len(row["negatives"]) == 4
         assert row["correct"] == reversed_description(episode.description)
         assert row["negatives"][episode.description] == "flipped_original"
+
+
+QWEN_RECORD = {"episode_id": "e1", "positive": "A person folds a towel and places it down.",
+               "negatives": {"reversed_action": "A person unfolds a towel and places it down.",
+                             "swapped_order": "A person places a towel down and folds it."}}
+
+
+def test_qwen_candidates_fill_to_k_and_flip_with_the_swapped_sentence():
+    from team.train_ranker import qwen_candidates
+
+    pool = [f"Someone does thing {i}." for i in range(10)]
+    correct, negatives, flipped = qwen_candidates(QWEN_RECORD, 8, 0.0, pool, random.Random(0))
+    assert not flipped and correct == QWEN_RECORD["positive"]
+    assert len(negatives) == 8 and correct not in negatives
+    assert negatives[QWEN_RECORD["negatives"]["reversed_action"]] == "qwen_reversed_action"
+    correct, negatives, flipped = qwen_candidates(QWEN_RECORD, 4, 1.0, pool, random.Random(0))
+    assert flipped and correct == QWEN_RECORD["negatives"]["swapped_order"]
+    assert negatives[QWEN_RECORD["positive"]] == "qwen_flipped_original"
+    assert len(negatives) == 4 and correct not in negatives
+
+
+def test_qwen_records_come_only_from_the_training_split(tmp_path):
+    from team.train_ranker import load_qwen_records
+
+    path = tmp_path / "generated.jsonl"
+    rows = [{**QWEN_RECORD, "episode_id": "train_ok"}, {**QWEN_RECORD, "episode_id": "valid_one"},
+            {**QWEN_RECORD, "episode_id": "train_empty", "negatives": {}}]
+    path.write_text("\n".join(json.dumps(row) for row in rows), encoding="utf-8")
+    assert set(load_qwen_records(path, {"train_ok", "train_empty"})) == {"train_ok"}

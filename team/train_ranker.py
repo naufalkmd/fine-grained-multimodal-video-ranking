@@ -178,9 +178,42 @@ def order_pairing(model, encoders, frames_by_episode, episodes, device, count=40
     return {"episodes": len(picked), "score": round(wins / len(picked), 4)}
 
 
+def load_qwen_records(path, train_ids):
+    """Training-split records from team.qwen_negatives with a positive and at least one negative."""
+    records = {}
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record["episode_id"] in train_ids and record["positive"] and record["negatives"]:
+            records[record["episode_id"]] = record
+    return records
+
+
+def qwen_candidates(record, count, flip_probability, short_pool, rng):
+    """A short positive with its single-change negatives, topped up with other short positives.
+
+    With a swapped-order negative, flipping works as for full descriptions: on reversed frames the
+    swapped sentence is correct and the original wording becomes a negative.
+    """
+    correct = record["positive"]
+    negatives = {text: f"qwen_{kind}" for kind, text in record["negatives"].items()}
+    swapped = record["negatives"].get("swapped_order")
+    flipped = bool(swapped) and rng.random() < flip_probability
+    if flipped:
+        negatives = {record["positive"]: "qwen_flipped_original",
+                     **{text: kind for text, kind in negatives.items() if text != swapped}}
+        correct = swapped
+    for _ in range(count * 20):
+        if len(negatives) >= count:
+            break
+        text = rng.choice(short_pool)
+        if text != correct and text not in negatives:
+            negatives[text] = "qwen_other_episode"
+    return correct, dict(list(negatives.items())[:count]), flipped
+
+
 def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes, types, device,
               epoch, seed, batch_size, reverse_weight, flip_probability, count=4, mix=None,
-              fill="random", record=None):
+              fill="random", record=None, qwen=None, qwen_probability=0.0):
     """Train for one epoch. `record` receives the candidates used, for the organizers' inspection."""
     model.train()
     order = list(range(len(episodes)))
@@ -188,6 +221,7 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
     ranking_loss = nn.CrossEntropyLoss()
     order_loss = nn.BCEWithLogitsLoss()
     totals = {"loss": 0.0, "correct_first": 0, "episodes": 0}
+    short_pool = [item["positive"] for item in qwen.values()] if qwen else []
     for start in range(0, len(order), batch_size):
         indices = order[start:start + batch_size]
         features, texts, targets = [], [], []
@@ -195,6 +229,21 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
             rng = random.Random(f"{seed}:negatives:{epoch}:{episodes[i].episode_id}")
             description = episodes[i].description
             frames = frames_by_episode[episodes[i].episode_id]
+            qwen_record = qwen.get(episodes[i].episode_id) if qwen else None
+            if qwen_record and rng.random() < qwen_probability:
+                correct, negatives, flipped = qwen_candidates(qwen_record, count, flip_probability,
+                                                              short_pool, rng)
+                if flipped:
+                    frames = frames.flip(0)
+                features.append(frames)
+                choices = [correct, *negatives]
+                rng.shuffle(choices)
+                if record is not None:
+                    record.write(json.dumps({"episode_id": episodes[i].episode_id, "flipped": flipped,
+                                             "correct": correct, "negatives": negatives}) + "\n")
+                texts.extend(choices)
+                targets.append(choices.index(correct))
+                continue
             correct = reversed_description(description)
             negatives = draw_negatives(generator, i, types, count, rng, mix, fill)
             if correct != description and rng.random() < flip_probability:
@@ -272,6 +321,11 @@ def main():
                         help="Share of episodes trained with frames and text reversed together.")
     parser.add_argument("--save-negatives", action="store_true",
                         help="Save every epoch's candidates in the run's negatives/ folder.")
+    parser.add_argument("--qwen-candidates", type=Path,
+                        help="team.qwen_negatives output; its training-split records add short "
+                             "positives with single-change negatives.")
+    parser.add_argument("--qwen-probability", type=float, default=0.5,
+                        help="Share of episodes with a usable record trained on it instead.")
     parser.add_argument("--max-train-episodes", type=int, help="Small subset for a smoke run.")
     parser.add_argument("--report-only", action="store_true",
                         help="Skip training and rebuild report.json from the run's best.pt.")
@@ -319,6 +373,8 @@ def main():
                                             list(episodes.values()), encoders)
     generator = NegativeGenerator([e.description for e in train],
                                   [load_action_labels(e) for e in train])
+    qwen = (load_qwen_records(args.qwen_candidates, {e.episode_id for e in train})
+            if args.qwen_candidates else None)
     model_config = {"hidden_dim": config["hidden_dim"], "dropout": config["dropout"]}
     if args.model == "temporal":
         model_config["cross_attention"] = not args.no_cross_attention
@@ -329,6 +385,9 @@ def main():
     run_info = {"model": args.model, "model_config": model_config, "trained_on": train_types,
                 "negatives_per_episode": args.k, "mix": mix or None,
                 "fill": args.fill if mix else None,
+                "qwen_candidates": str(args.qwen_candidates) if qwen else None,
+                "qwen_probability": args.qwen_probability if qwen else 0.0,
+                "qwen_train_records": len(qwen) if qwen else 0,
                 "held_out": held_out, "reverse_weight": reverse_weight,
                 "flip_probability": args.flip_probability, "save_negatives": args.save_negatives,
                 "train_episodes": len(train), "valid_episodes": len(valid),
@@ -352,7 +411,7 @@ def main():
             train_metrics = run_epoch(model, optimizer, encoders, frames_by_episode, generator, train,
                                       train_types, device, epoch, config["seed"], args.batch_size,
                                       reverse_weight, args.flip_probability, args.k, mix, args.fill,
-                                      record)
+                                      record, qwen, args.qwen_probability if qwen else 0.0)
         finally:
             if record is not None:
                 record.close()
