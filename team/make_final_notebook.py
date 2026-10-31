@@ -121,8 +121,8 @@ T4 GPU**.
 The chosen rule reads only the candidate texts. package.py still requires the kit's encoders and
 `weights/mlp.pt` in every ZIP, so this runs the organizers' baseline training unchanged (its weights
 aren't loaded by the rule), then exports the rule set by `FINAL_RULE` in section 2:
-`"central"` (team/submission_central.py) or `"regime"` (team/submission_regime.py, which also counts
-word pairs in the training descriptions).
+`"central"` (team/submission_central.py), or `"interleave"` / `"regime"` (team/submission_regime.py,
+which also counts word pairs in the training descriptions; `"regime"` adds the structure gate).
 
 Before starting, copy the repository to `MyDrive/starterkit`, without `cuda/`, and the data to
 `MyDrive/data/Train.zip`. `SMOKE_TEST` starts as `True` to check that everything works. **Set it to
@@ -135,8 +135,9 @@ run_script("export.py", "--checkpoint", CHECKPOINT, "--output-dir", KIT_EXPORT_D
            log_name="export.log", extra_env=OFFLINE)
 if FINAL_RULE == "central":
     rule_args = ["team.export_central", "--base-dir", KIT_EXPORT_DIR]
-elif FINAL_RULE == "regime":
+elif FINAL_RULE in ("regime", "interleave"):
     rule_args = ["team.export_regime", "--config", CONFIG_PATH, "--kit-submission", KIT_EXPORT_DIR]
+    rule_args += ["--no-gate"] if FINAL_RULE == "interleave" else []
 else:
     raise ValueError(f"Unknown FINAL_RULE: {FINAL_RULE}")
 run_command([PYTHON, "-u", "-m", *rule_args, "--output-dir", EXPORT_DIR],
@@ -229,7 +230,7 @@ def build_text(notebook, get, put):
                              'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train.zip")  # Or a Train folder\n')
     configure = replace_once(configure, "SMOKE_TEST = False\n",
                              "SMOKE_TEST = True  # Set to False for the final run\n"
-                             'FINAL_RULE = "regime"  # "central" or "regime"\n')
+                             'FINAL_RULE = "regime"  # "central", "interleave" or "regime"\n')
     configure = replace_once(configure, '"download_models.py"]',
                              '"download_models.py", "team/submission_central.py", "team/export_central.py",\n'
                              '            "team/submission_regime.py", "team/export_regime.py"]')

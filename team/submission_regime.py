@@ -6,7 +6,8 @@ on such sets. The ranking then takes centrality's first choice, `unfamiliar`'s f
 on in turn. Otherwise centrality is close to chance, and `unfamiliar` goes first. `unfamiliar`
 prefers wording that the training descriptions make less likely (bigram counts stored in
 weights/bigram_counts.json), because publicly the most familiar wording scored far below chance.
-Reads only the episode's candidate texts, with no state kept between episodes.
+With `"gate": false` in weights/bigram_counts.json, centrality always goes first (plain
+interleaving). Reads only the episode's candidate texts, with no state kept between episodes.
 """
 
 import difflib
@@ -32,6 +33,7 @@ class Submission:
         self.total = sum(self.unigrams.values())
         self.vocabulary = len(self.unigrams) + 1
         self.prior = counts["prior"]
+        self.gate = counts.get("gate", True)
 
     def familiarity(self, text):
         """Mean log p(word | previous word) under the training descriptions."""
@@ -65,7 +67,8 @@ class Submission:
         unfamiliar = [-self.familiarity(text) for text in texts]
         by_central = sorted(range(count), key=lambda i: -central[i])
         by_unfamiliar = sorted(range(count), key=lambda i: (-unfamiliar[i], -central[i]))
-        first, second = ((by_central, by_unfamiliar) if 0 in self.unique_words(texts)
+        trust_centrality = not self.gate or 0 in self.unique_words(texts)
+        first, second = ((by_central, by_unfamiliar) if trust_centrality
                          else (by_unfamiliar, by_central))
         ranking = []
         for pair in zip(first, second):

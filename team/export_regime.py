@@ -20,7 +20,7 @@ from team.submission_central import words
 PRIOR = 1.0
 
 
-def export(config_path, kit_submission, output_dir):
+def export(config_path, kit_submission, output_dir, gate=True):
     kit_submission, output_dir = Path(kit_submission), Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Use an empty submission directory: {output_dir}")
@@ -37,10 +37,10 @@ def export(config_path, kit_submission, output_dir):
     shutil.copyfile(ROOT / "team/submission_central.py", output_dir / "submission_central.py")
     shutil.copyfile(ROOT / "team/submission_regime.py", output_dir / "submission.py")
     save_json(output_dir / "weights/bigram_counts.json",
-              {"prior": PRIOR, "unigrams": dict(unigrams), "bigrams": dict(bigrams)})
+              {"prior": PRIOR, "gate": gate, "unigrams": dict(unigrams), "bigrams": dict(bigrams)})
     save_json(output_dir / "training_info.json", {
-        "method": "structure-gated interleave of centrality and unfamiliar wording "
-                  "(team/submission_regime.py)",
+        "method": ("structure-gated interleave" if gate else "interleave")
+                  + " of centrality and unfamiliar wording (team/submission_regime.py)",
         "uses_video": False, "trained": False, "bigram_descriptions": len(descriptions),
         "note": "The kit's DINOv2, MPNet and weights/mlp.pt are present only because package.py "
                 "requires them; they aren't loaded."})
@@ -54,8 +54,10 @@ def main():
     parser.add_argument("--config", type=Path, default=ROOT / "cuda/config.json")
     parser.add_argument("--kit-submission", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-gate", action="store_true",
+                        help="Always put centrality first (plain interleaving).")
     args = parser.parse_args()
-    export(args.config, args.kit_submission, args.output_dir)
+    export(args.config, args.kit_submission, args.output_dir, gate=not args.no_gate)
 
 
 if __name__ == "__main__":

@@ -47,3 +47,14 @@ def test_without_a_source_text_the_least_familiar_goes_first(tmp_path):
     ranking = submission.predict([], choices)
     assert ranking[-1] != "a" and ranking[0] in "bc"
     assert sorted(ranking) == list("abc")
+
+
+def test_without_the_gate_centrality_always_goes_first(tmp_path):
+    choices = [
+        {"id": "a", "text": "A man buttons a shirt near the sofa."},
+        {"id": "b", "text": "A man buttons a coat near the sofa."},
+        {"id": "c", "text": "Someone fastens the blue jacket by a window."},
+    ]
+    submission = make_submission(tmp_path, "A man buttons a shirt near the sofa.")
+    submission.gate = False
+    assert submission.predict([], choices)[0] in "ab"
