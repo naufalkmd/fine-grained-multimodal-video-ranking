@@ -10,10 +10,10 @@ Local scores use our own validation candidates; public scores come from the lead
 |---|---|---:|
 | `final_rehearsal.zip` | H: temporal, cross-attention, flipping 0.5, 60 epochs | 0.3586 |
 | `temporal_word_swap_v1.zip` | H + `word_swap` | 0.3968 |
-| `central_submission.zip` | Text only: ranks candidates by centrality, no video, no training | about 0.53 |
+| `central_submission.zip` | Text only: ranks candidates by centrality, no video, no training | **0.5515** |
 
-Chance is 0.375. The centrality figure is estimated from the first 100 rows of the per-episode CSV
-(39% ranked first, 14% ranked last); replace it with the leaderboard value.
+Chance is 0.375. In the first 100 rows of the centrality submission's per-episode results, the
+correct text was ranked first in 39% of episodes and last in 14%.
 
 ## What the test candidates seem to be
 
@@ -36,7 +36,7 @@ never looks at the video.
 | `swapped_action` | One sentence replaced | 0.971 |
 | `similar_episode`, `random` | Other videos' descriptions | 0.37-0.39 |
 
-Public came out at about 0.53, far above the video models but well below 0.99. So many test
+Public came out at 0.5515, far above the video models but well below 0.99. So many test
 negatives are edits of the correct text, but not all: in 14% of episodes the correct text was the
 least central candidate. Local sets overstate centrality, so its weight has to be set on public.
 
@@ -55,7 +55,7 @@ them:
 | T2 (no Qwen data) | 0.379 | - |
 | H + `word_swap` | 0.390 | 0.3968 |
 
-It doesn't match for centrality (0.997 locally against about 0.53 publicly), as explained above.
+It doesn't match for centrality (0.997 locally against 0.5515 publicly), as explained above.
 
 ## Training on Qwen data (Q1)
 
