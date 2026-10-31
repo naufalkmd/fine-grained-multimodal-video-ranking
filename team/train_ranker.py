@@ -24,6 +24,8 @@ from team.negatives import (
     reversed_description,
 )
 from team.ranker_model import MODELS
+from team.train_negatives import check_mix, parse_mix
+from team.train_negatives import sample_negatives as sample_mixed
 from team.rank_eval import rank_score, summarize
 from torch import nn
 
@@ -102,6 +104,13 @@ def sample_negatives(generator, index, types, count, rng):
     return list(negatives)[:count]
 
 
+def draw_negatives(generator, index, types, count, rng, mix=None, fill="random"):
+    """With a mix, the counts per type are fixed (team.train_negatives); otherwise types are drawn."""
+    if mix:
+        return [text for _, text in sample_mixed(generator, index, mix, count, fill, rng)]
+    return sample_negatives(generator, index, types, count, rng)
+
+
 @torch.inference_mode()
 def score_sets(model, encoders, frames_by_episode, candidates, name, device, batch_size=32,
                wrong_video=False):
@@ -168,7 +177,8 @@ def order_pairing(model, encoders, frames_by_episode, episodes, device, count=40
 
 
 def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes, types, device,
-              epoch, seed, batch_size, reverse_weight, flip_probability):
+              epoch, seed, batch_size, reverse_weight, flip_probability, count=4, mix=None,
+              fill="random"):
     model.train()
     order = list(range(len(episodes)))
     random.Random(f"{seed}:order:{epoch}").shuffle(order)
@@ -183,12 +193,12 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
             description = episodes[i].description
             frames = frames_by_episode[episodes[i].episode_id]
             correct = reversed_description(description)
-            negatives = sample_negatives(generator, i, types, 4, rng)
+            negatives = draw_negatives(generator, i, types, count, rng, mix, fill)
             if correct != description and rng.random() < flip_probability:
                 # Reverse frames and text together, so the reordered wording is sometimes the
                 # right answer. Only the video can then show which text order is correct.
                 frames = frames.flip(0)
-                negatives = [description, *[text for text in negatives if text != correct]][:4]
+                negatives = [description, *[text for text in negatives if text != correct]][:count]
             else:
                 correct = description
             features.append(frames)
@@ -198,12 +208,12 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
             targets.append(choices.index(correct))
         tokens, token_mask = encode_tokens(encoders, texts)
         frames, frame_mask = collate_frames(features, device)
-        logits = model.logits(frames, frame_mask, tokens, token_mask, 5)
+        logits = model.logits(frames, frame_mask, tokens, token_mask, count + 1)
         targets = torch.tensor(targets, device=device)
         loss = ranking_loss(logits, targets)
         if reverse_weight > 0:
             # The correct text should fit forward frames better than reversed frames.
-            rows = torch.arange(len(indices), device=device) * 5 + targets
+            rows = torch.arange(len(indices), device=device) * (count + 1) + targets
             backward = model.logits(*collate_frames(reverse_frames(features), device),
                                     tokens[rows], token_mask[rows], 1)
             margin = logits.gather(1, targets.unsqueeze(1)) - backward
@@ -223,8 +233,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=ROOT / "config.json")
     parser.add_argument("--model", choices=sorted(MODELS), required=True)
-    parser.add_argument("--train-negatives", required=True,
-                        help=f"Comma-separated types from {NEGATIVE_TYPES}; the rest are held out.")
+    parser.add_argument("--train-negatives",
+                        help=f"Comma-separated types from {NEGATIVE_TYPES}, drawn at random for each "
+                             "negative; the rest are held out. Use this or --mix.")
+    parser.add_argument("--mix", default="",
+                        help="Fixed counts per type instead, e.g. lexical=3,similar_episode=3,random=2. "
+                             "Types used, including --fill, count as trained; the rest are held out.")
+    parser.add_argument("--k", type=int, default=4,
+                        help="Negatives per training episode; the ranking list holds 1 + k candidates.")
+    parser.add_argument("--fill", default="random", help="With --mix, the type for the rest of the k.")
     parser.add_argument("--splits", type=Path, required=True, help="splits.json from an earlier run.")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--frame-cache", type=Path, help="Defaults to frames/features.pt beside the "
@@ -249,7 +266,17 @@ def main():
                         help="Skip training and rebuild report.json from the run's best.pt.")
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
-    train_types = sorted(args.train_negatives.split(","))
+    if bool(args.train_negatives) == bool(args.mix):
+        parser.error("Give exactly one of --train-negatives and --mix.")
+    mix = parse_mix(args.mix)
+    if mix:
+        check_mix(mix, args.k, args.fill)
+        train_types = {name for name, count in mix.items() if count}
+        if sum(mix.values()) < args.k:
+            train_types.add(args.fill)
+        train_types = sorted(train_types)
+    else:
+        train_types = sorted(args.train_negatives.split(","))
     if unknown := set(train_types) - set(NEGATIVE_TYPES):
         parser.error(f"Unknown negative types: {sorted(unknown)}")
     held_out = [name for name in NEGATIVE_TYPES if name not in train_types]
@@ -289,6 +316,8 @@ def main():
                                   weight_decay=args.weight_decay)
     reverse_weight = args.reverse_weight if args.model == "temporal" else 0.0
     run_info = {"model": args.model, "model_config": model_config, "trained_on": train_types,
+                "negatives_per_episode": args.k, "mix": mix or None,
+                "fill": args.fill if mix else None,
                 "held_out": held_out, "reverse_weight": reverse_weight,
                 "flip_probability": args.flip_probability, "train_episodes": len(train), "valid_episodes": len(valid),
                 "learning_rate": args.learning_rate, "batch_size": args.batch_size,
@@ -304,7 +333,7 @@ def main():
         started = time.perf_counter()
         train_metrics = run_epoch(model, optimizer, encoders, frames_by_episode, generator, train,
                                   train_types, device, epoch, config["seed"], args.batch_size,
-                                  reverse_weight, args.flip_probability)
+                                  reverse_weight, args.flip_probability, args.k, mix, args.fill)
         selected = {name: score_sets(model, encoders, frames_by_episode, candidates, name, device)
                     for name in SELECTION_SETS}
         pairing = order_pairing(model, encoders, frames_by_episode, valid, device)
