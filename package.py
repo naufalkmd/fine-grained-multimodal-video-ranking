@@ -17,7 +17,8 @@ REQUIRED = {
 }
 OPTIONAL = {"ranker_model.py", "submission_ranker.py", "submission_siglip.py", "submission_central.py",
             "submission_siglip_diff.py", "weights/reference_frames.pt",
-            "submission_evidence.py", "smolvlm_scorer.py", "weights/bigram_counts.json"}
+            "submission_evidence.py", "smolvlm_scorer.py", "weights/bigram_counts.json",
+            "weights/char_counts.json", "weights/rule.json"}
 
 
 def package(source, output, force=False):

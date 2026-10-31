@@ -80,6 +80,9 @@ the reason.
 - `time_submission.py`: times an exported submission and projects the 1,910-episode test.
 - `text_rules.py`: text-only rules (centrality, familiar or unfamiliar wording, interleaving, a
   structure gate) scored on `qwen_long_negatives.py`'s LLM-edited validation sets.
+- `submission_fusion.py`, `export_fusion.py`: text signals (centrality, unfamiliar words or characters
+  under counts from the training descriptions, shortness) combined by one signal, interleaving or
+  public rank shares (`bayes`), optionally with the structure gate. Set in `weights/rule.json`.
 - `submission_regime.py`, `export_regime.py`: centrality first when some candidate's words all
   survive in the others (the rest look like edits of it), otherwise unfamiliar wording first; the
   two alternate after that. Text only.

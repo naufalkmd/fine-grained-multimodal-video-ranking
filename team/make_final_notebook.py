@@ -121,8 +121,9 @@ T4 GPU**.
 The chosen rule reads only the candidate texts. package.py still requires the kit's encoders and
 `weights/mlp.pt` in every ZIP, so this runs the organizers' baseline training unchanged (its weights
 aren't loaded by the rule), then exports the rule set by `FINAL_RULE` in section 2:
-`"central"` (team/submission_central.py), or `"interleave"` / `"regime"` (team/submission_regime.py,
-which also counts word pairs in the training descriptions; `"regime"` adds the structure gate).
+`"central"` (team/submission_central.py), `"interleave"` / `"regime"` (team/submission_regime.py,
+which also counts word pairs in the training descriptions; `"regime"` adds the structure gate), or
+`"fusion"` (team/submission_fusion.py with the options in `FUSION_ARGS`).
 
 Before starting, copy the repository to `MyDrive/starterkit`, without `cuda/`, and the data to
 `MyDrive/data/Train.zip`. `SMOKE_TEST` starts as `True` to check that everything works. **Set it to
@@ -138,6 +139,9 @@ if FINAL_RULE == "central":
 elif FINAL_RULE in ("regime", "interleave"):
     rule_args = ["team.export_regime", "--config", CONFIG_PATH, "--kit-submission", KIT_EXPORT_DIR]
     rule_args += ["--no-gate"] if FINAL_RULE == "interleave" else []
+elif FINAL_RULE == "fusion":
+    rule_args = ["team.export_fusion", "--config", CONFIG_PATH, "--kit-submission", KIT_EXPORT_DIR,
+                 *FUSION_ARGS]
 else:
     raise ValueError(f"Unknown FINAL_RULE: {FINAL_RULE}")
 run_command([PYTHON, "-u", "-m", *rule_args, "--output-dir", EXPORT_DIR],
@@ -230,10 +234,13 @@ def build_text(notebook, get, put):
                              'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train.zip")  # Or a Train folder\n')
     configure = replace_once(configure, "SMOKE_TEST = False\n",
                              "SMOKE_TEST = True  # Set to False for the final run\n"
-                             'FINAL_RULE = "regime"  # "central", "interleave" or "regime"\n')
+                             'FINAL_RULE = "regime"  # "central", "interleave", "regime" or "fusion"\n'
+                             '# Used only when FINAL_RULE == "fusion" (team/export_fusion.py options):\n'
+                             'FUSION_ARGS = ["--signals", "centrality,unfamiliar_words", "--method", "interleave"]\n')
     configure = replace_once(configure, '"download_models.py"]',
                              '"download_models.py", "team/submission_central.py", "team/export_central.py",\n'
-                             '            "team/submission_regime.py", "team/export_regime.py"]')
+                             '            "team/submission_regime.py", "team/export_regime.py",\n'
+                             '            "team/submission_fusion.py", "team/export_fusion.py"]')
     put("configure", configure)
     put("stage-data", replace_once(get("stage-data"), '".git", "models",', '".git", "cuda", "models",'))
     put("export-validate", TEXT_EXPORT)
