@@ -28,6 +28,7 @@ the reason.
 ## Files
 
 - `negatives.py`: generates negative descriptions from the organizers' data with a fixed seed.
+- `lexical.py`: hub-corrected word-overlap similarity used by the `lexical` negative type.
 - `rank_eval.py`: scores an exported submission on fixed 5-candidate validation sets, and runs
   the scoring, text-only leak and frame-order checks.
 - `tests/`: tests for the above.

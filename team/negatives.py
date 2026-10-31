@@ -1,8 +1,8 @@
 """Generate negative descriptions from the organizers' data, using code and a fixed seed.
 
 No word lists or hand-written text: every negative is built by rearranging or combining
-original descriptions. Similar episodes are found with the organizers' action labels, not with
-any model's scores. Pass only one split's episodes so negatives never cross train and validation.
+original descriptions. Similar episodes are found with the organizers' action labels or TF-IDF
+word overlap (see lexical.py), not with any model's scores. Pass only one split's episodes so negatives never cross train and validation.
 """
 
 import json
@@ -12,7 +12,10 @@ from collections import Counter
 
 import numpy as np
 
-NEGATIVE_TYPES = ("reorder", "added_action", "swapped_action", "similar_episode", "random")
+from team.lexical import lexical_similarity
+
+NEGATIVE_TYPES = ("reorder", "added_action", "swapped_action", "similar_episode", "lexical",
+                  "random")
 MIXED_TYPES = ("reorder", "added_action", "swapped_action", "similar_episode")
 
 
@@ -53,12 +56,13 @@ class NegativeGenerator:
         for index, labels in enumerate(action_labels):
             for label, count in Counter(labels).items():
                 self.action_counts[index, vocabulary[label]] = count
+        self._word_similarity = None
 
     def generate(self, index, negative_type, count, rng):
         """Up to `count` distinct negatives; fewer if this description can't produce enough."""
         make = {"reorder": self._reorder, "added_action": self._added_action,
                 "swapped_action": self._swapped_action, "similar_episode": self._similar_episode,
-                "random": self._random}[negative_type]
+                "lexical": self._lexical, "random": self._random}[negative_type]
         original = self.descriptions[index]
         results = {}
         for text in make(index, count, rng):
@@ -123,6 +127,17 @@ class NegativeGenerator:
         similarity[index] = -1
         tie_break = np.random.default_rng(rng.getrandbits(32)).random(len(similarity))
         nearest = np.lexsort((tie_break, -similarity))[:max(count * 5, 20)].tolist()
+        rng.shuffle(nearest)
+        for other in nearest:
+            yield self.descriptions[other]
+
+    def _lexical(self, index, count, rng):
+        """Random picks from the descriptions with the most word overlap, after the hub correction."""
+        if self._word_similarity is None:
+            self._word_similarity = lexical_similarity(self.descriptions)
+        similarity = self._word_similarity[index]
+        nearest = np.lexsort((np.arange(len(similarity)), -similarity))
+        nearest = [other for other in nearest.tolist() if other != index][:max(count * 5, 20)]
         rng.shuffle(nearest)
         for other in nearest:
             yield self.descriptions[other]

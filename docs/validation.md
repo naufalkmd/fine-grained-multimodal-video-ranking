@@ -17,6 +17,7 @@ classifier is only a diagnostic: never use its outputs to select negatives or tr
 | Set | Text-only score | Cause |
 |---|---:|---|
 | `random` | 0.370 | None found |
+| `lexical` | 0.397 | None found after the hub correction in `team/lexical.py`; plain TF-IDF neighbours scored 0.485 |
 | `similar_episode` | 0.398 | None found |
 | `reorder` | 0.451 | Not identified; down from 0.820 after keeping the opening sentence first |
 | `mixed` | 0.487 | Contains the other leaking types |
@@ -77,3 +78,5 @@ Record every experiment that gets a local score.
 | Date and time (KST) | Experiment | Trained on | Held out | Local: seen | Local: held out | Public |
 |---|---|---|---|---:|---:|---:|
 | 2026-10-31 15:33 | Kit baseline: mean-pooled frames, concat MLP, BCE; RTX 5070 | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721 | Not submitted |
+| 2026-10-31 16:22 | Same kit baseline retrained on a second machine (RTX 5070), scored with a first `lexical` set (plain TF-IDF top 4, since replaced). Other sets match the 15:33 run exactly | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode`, `lexical` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721, `lexical` 0.579 | Not submitted |
+| 2026-10-31 17:20 | Same checkpoint as 16:22, scored with `lexical` from `team/lexical.py` (CSLS-corrected TF-IDF, 4 random picks from the nearest 20). Other sets unchanged | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode`, `lexical` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721, `lexical` 0.658 | Not submitted |

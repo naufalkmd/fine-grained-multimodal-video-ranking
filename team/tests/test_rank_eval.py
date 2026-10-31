@@ -4,6 +4,7 @@ import random
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -16,6 +17,7 @@ from team.negatives import (
     reorder_clauses,
     split_sentences,
 )
+from team.lexical import lexical_similarity
 from team.rank_eval import RANDOM_SCORE, order_check, rank_score, score_known_scorers
 
 DESCRIPTIONS = [
@@ -144,3 +146,21 @@ class _FakeImages(list):
 class _Frame(int):
     def close(self):
         pass
+
+
+def test_lexical_negatives_come_from_the_most_overlapping_descriptions():
+    descriptions = [f"A man opens red door {i}." for i in range(25)] + ["A child throws a ball."]
+    generator = NegativeGenerator(descriptions, [["open"]] * 25 + [["throw"]])
+    negatives = generator.generate(0, "lexical", 4, random.Random(0))
+    assert len(set(negatives)) == 4
+    assert "A child throws a ball." not in negatives
+
+
+def test_hub_correction_prefers_a_specific_match_over_a_generic_one():
+    # "cup bowl" shares words with every description, so plain TF-IDF picks it for the first.
+    descriptions = ["cup bowl pen", "pen nib", "cup bowl"] + [f"cup bowl x{i} y{i}" for i in range(6)]
+    similarity = lexical_similarity(descriptions, k=3)
+    assert np.argmax(similarity[0]) == 1
+    assert np.isneginf(np.diag(similarity)).all()
+    finite = np.isfinite(similarity)
+    assert np.allclose(similarity[finite], similarity.T[finite])
