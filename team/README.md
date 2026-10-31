@@ -29,6 +29,8 @@ the reason.
 
 - `negatives.py`: generates negative descriptions from the organizers' data with a fixed seed.
 - `lexical.py`: hub-corrected word-overlap similarity used by the `lexical` negative type.
+- `train_negatives.py`: training negatives, k per episode with a set count from each type,
+  resampled every epoch from the training split only, and saved as a record.
 - `rank_eval.py`: scores an exported submission on fixed 5-candidate validation sets, and runs
   the scoring, text-only leak and frame-order checks.
 - `tests/`: tests for the above.
@@ -37,4 +39,6 @@ the reason.
 python -m pytest tests team/tests
 python -m team.rank_eval --config cuda/config.json --run-dir cuda/outputs/baseline \
     --submission-dir cuda/sample_submission --trained-on random
+python -m team.train_negatives --config cuda/config.json --run-dir cuda/outputs/baseline \
+    --k 4 --mix lexical=2,similar_episode=2 --epochs 20
 ```
