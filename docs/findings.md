@@ -35,6 +35,13 @@ Local scores use our own validation candidates; public scores come from the lead
    videos correctly.
 4. **Combining with centrality only pays if the video signal is right on the test.** Weighted sums,
    near-tie breaking, a similarity gate and a confidence gate all scored at or below centrality.
+5. **LLM edits of the correct text don't look like the test.** Qwen3-4B, asked for full-length
+   incorrect versions (`team/qwen_long_negatives.py`), kept the correct text central (centrality
+   0.99-1.00) and made the negatives *less* like the training descriptions (`style` 0.58-0.64),
+   the opposite of public (0.5515 and 0.2411), even when asked to reword. A structure that fits
+   both public results, inferred and unconfirmed: the correct text comes from a different writer
+   than the negatives, which share the training descriptions' (Codex's) style. That would also
+   explain why image models trained on those descriptions were pulled towards negatives.
 
 ## Public scores so far
 
