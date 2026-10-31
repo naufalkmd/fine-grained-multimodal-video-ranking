@@ -70,6 +70,14 @@ def sample_negatives(generator, index, mix, k, fill, rng):
     return [(negative_type, text) for text, negative_type in chosen.items()]
 
 
+def epoch_record(episode_ids, descriptions, negatives):
+    """Negatives copied from a training description are stored by episode ID to keep files small."""
+    source = {text: episode_id for episode_id, text in zip(episode_ids, descriptions)}
+    return {episode_id: [{"type": t, "source": source[x]} if x in source else {"type": t, "text": x}
+                         for t, x in items]
+            for episode_id, items in zip(episode_ids, negatives)}
+
+
 class TrainingNegatives:
     def __init__(self, episode_ids, descriptions, action_labels, mix, k, fill="random", seed=2026):
         check_mix(mix, k, fill)
@@ -105,14 +113,10 @@ def main():
     sampler = TrainingNegatives(train_ids, descriptions,
                                 [load_action_labels(episodes[i]) for i in train_ids],
                                 mix, args.k, args.fill, config["seed"])
-    # Negatives copied from another description are stored by episode ID to keep the file small.
-    source = {text: episode_id for episode_id, text in zip(train_ids, descriptions)}
     record, used = [], Counter()
     for epoch in range(args.epochs):
         negatives = sampler.epoch(epoch)
-        record.append({episode_id: [{"type": t, "source": source[x]} if x in source
-                                    else {"type": t, "text": x} for t, x in items]
-                       for episode_id, items in zip(train_ids, negatives)})
+        record.append(epoch_record(train_ids, descriptions, negatives))
         used.update(t for items in negatives for t, _ in items)
         print(f"Epoch {epoch + 1}/{args.epochs} sampled", flush=True)
     output = args.output or args.run_dir / "train_negatives.json"

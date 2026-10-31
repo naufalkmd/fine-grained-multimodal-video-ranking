@@ -11,7 +11,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from team.negatives import NegativeGenerator, reversed_description
 from team.ranker_model import MODELS, MeanPoolRanker, TemporalRanker
-from team.train_ranker import collate_frames, order_pairing, reverse_frames, sample_negatives
+from team.train_ranker import (
+    collate_frames,
+    draw_negatives,
+    order_pairing,
+    reverse_frames,
+    run_epoch,
+    sample_negatives,
+)
 
 
 class PairingEpisode:
@@ -116,3 +123,45 @@ def test_sampled_negatives_are_distinct_and_fall_back_when_a_type_runs_out():
     negatives = sample_negatives(generator, 0, ["reorder"], 4, random.Random(1))
     assert len(negatives) == 4 == len(set(negatives))
     assert descriptions[0] not in negatives
+
+
+def test_draw_negatives_follows_a_mix_or_falls_back_to_drawn_types():
+    descriptions = [f"Person {i} opens box {i % 5}. They lift cup {i % 3}. They wave." for i in range(30)]
+    generator = NegativeGenerator(descriptions, [["open"] if i % 2 else ["show"] for i in range(30)])
+    mixed = draw_negatives(generator, 0, None, 8, random.Random(0),
+                           {"lexical": 3, "similar_episode": 3}, "random")
+    assert len(mixed) == 8 == len(set(mixed))
+    assert descriptions[0] not in mixed
+    assert (draw_negatives(generator, 0, ["random"], 4, random.Random(2))
+            == sample_negatives(generator, 0, ["random"], 4, random.Random(2)))
+
+
+class TrainEpisode:
+    def __init__(self, index):
+        self.episode_id = f"e{index}"
+        self.description = f"Person {index} opens a box. They lift cup {index}. They wave {index}."
+
+
+def test_run_epoch_ranks_one_correct_and_k_negatives_also_when_flipped(monkeypatch):
+    seen = []
+
+    def fake_tokens(encoders, texts):
+        seen.append(list(texts))
+        return torch.randn(len(texts), 3, 768), torch.ones(len(texts), 3, dtype=torch.bool)
+
+    monkeypatch.setattr("team.train_ranker.encode_tokens", fake_tokens)
+    episodes = [TrainEpisode(i) for i in range(12)]
+    generator = NegativeGenerator([e.description for e in episodes], [["a"]] * 12)
+    frames = {e.episode_id: torch.randn(4, 768).half() for e in episodes}
+    model = TemporalRanker(hidden_dim=32, dropout=0.0, cross_attention=False)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    metrics = run_epoch(model, optimizer, None, frames, generator, episodes, None, "cpu", 0, 1,
+                        batch_size=4, reverse_weight=0.1, flip_probability=1.0, count=8,
+                        mix={"lexical": 4, "random": 4})
+    assert metrics["loss"] > 0
+    batches = [texts for texts in seen if len(texts) % 9 == 0 and len(texts) > 4]
+    assert sum(len(texts) for texts in batches) == 9 * len(episodes)
+    # Every episode is flipped, so its original wording must be among the 9 as a negative.
+    flat = [text for texts in batches for text in texts]
+    assert all(e.description in flat for e in episodes)
+    assert all(reversed_description(e.description) in flat for e in episodes)

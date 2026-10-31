@@ -32,10 +32,14 @@ the reason.
 - `lexical.py`: hub-corrected word-overlap similarity used by the `lexical` negative type.
 - `train_negatives.py`: training negatives, k per episode with a set count from each type,
   resampled every epoch from the training split only, and saved as a record.
+- `train_rank.py`: trains the kit model on 1 correct + k negatives with `--loss listwise` or
+  `--loss bce`, picking checkpoints by the 5-candidate score. Its checkpoints work with `export.py`.
 - `rank_eval.py`: scores an exported submission on fixed 5-candidate validation sets, and runs
   the scoring, text-only leak and frame-order checks.
 - `ranker_model.py`: the `mean_pool` and `temporal` models. Exported with the submission.
-- `train_ranker.py`: trains a model on generated negatives, using a listwise ranking loss.
+- `train_ranker.py`: trains a model on generated negatives, using a listwise ranking loss. With
+  `--mix` and `--k` it uses fixed counts per type from `train_negatives.py` and ranks 1 + k
+  candidates; without them it draws 4 negatives of random types as before.
 - `submission_ranker.py`: exported as the submission's `submission.py`.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `tests/`: tests for the above.
@@ -53,4 +57,14 @@ python -m team.train_ranker --config cuda/config.json --splits cuda/outputs/base
 python -m team.export_ranker --checkpoint cuda/outputs/temporal_v2/best.pt \
     --output-dir cuda/temporal_v2_submission
 python package.py --submission-dir cuda/temporal_v2_submission --output cuda/temporal_v2.zip
+
+python -m team.train_ranker --config cuda/config.json --splits cuda/outputs/baseline/splits.json \
+    --mix lexical=3,similar_episode=2,random=1,reorder=2 --k 8 --model temporal \
+    --no-cross-attention --flip-probability 0.5 --epochs 60 --patience 60 \
+    --candidates cuda/outputs/validation/candidates_lexical_csls.json \
+    --output-dir cuda/outputs/temporal/T2_k8_l3s2r1o2
+
+python -m team.train_rank --config cuda/config.json --output-dir cuda/outputs/listwise_lex2_sim2 \
+    --k 4 --mix lexical=2,similar_episode=2 --loss listwise \
+    --candidates cuda/outputs/validation/candidates_lexical_csls.json
 ```
