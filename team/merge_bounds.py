@@ -25,13 +25,27 @@ from team.compare_public import RANK, read_scores
 SCORES = (1.0, 0.5, 0.25, 0.125, 0.0)
 
 
-def take_turns(first, second):
+def take_turns(first, second, *more):
     merged = []
-    for pair in zip(first, second):
-        for item in pair:
+    for group in zip(first, second, *more):
+        for item in group:
             if item not in merged:
                 merged.append(item)
     return merged
+
+
+def take_turns_three(rank_a, rank_b, rank_c):
+    """Worst, independent and best scores of taking turns among three rules, for one episode."""
+    scores = []
+    orders = list(itertools.permutations((1, 2, 3, 4)))
+    for first_negatives in orders:
+        first = orders_with(rank_a, first_negatives)
+        for second_negatives in orders:
+            second = orders_with(rank_b, second_negatives)
+            for third_negatives in orders:
+                third = orders_with(rank_c, third_negatives)
+                scores.append(SCORES[take_turns(first, second, third).index(0)])
+    return min(scores), statistics.fmean(scores), max(scores)
 
 
 def rank_sum(first, second):
@@ -85,6 +99,8 @@ def main():
     parser.add_argument("second", type=Path)
     parser.add_argument("--reverse-second", action="store_true",
                         help="Use the second rule reversed (rank r becomes 6 - r).")
+    parser.add_argument("--third", type=Path,
+                        help="A third rule's CSV: also score taking turns among all three.")
     parser.add_argument("--observed-rank-sum", type=float,
                         help="Public score of the 1:1 rank sum, to fit rho.")
     args = parser.parse_args()
@@ -114,6 +130,18 @@ def main():
         if rho_fit is not None:
             line += f"  at rho {rho_fit:.2f}: {expected(merge, pairs, rho_fit):.4f}"
         print(line)
+    if args.third:
+        third, _ = read_scores(args.third)
+        cache = {}
+        totals = [0.0, 0.0, 0.0]
+        for (a, b), episode in zip(pairs, shared):
+            key = (a, b, RANK[third[episode]])
+            if key not in cache:
+                cache[key] = take_turns_three(*key)
+            totals = [t + v for t, v in zip(totals, cache[key])]
+        worst, independent, best = (t / len(pairs) for t in totals)
+        print(f"take_turns with {args.third.stem} third: worst {worst:.4f}  "
+              f"independent {independent:.4f}  best {best:.4f}")
 
 
 if __name__ == "__main__":

@@ -120,13 +120,27 @@ against about 20-25% by chance.
 
 **The team lead's merge analysis (`origin/main` 2bd6d28), checked so far:**
 
+Checked with `team/merge_bounds.py`, which enumerates all 4! x 4! placements of the negatives, on
+the public CSVs of centrality, `text_blend`, `text_style` and the rank sum (each CSV's mean matches
+its public score exactly):
+
 | Claim | Status |
 |---|---|
-| 125 episodes have only reversed style's pick correct, 157 only centrality's | Arithmetic checks against the public first-place shares (234 and 202 episodes, 77 both); the 77 itself needs `text_style`'s CSV |
-| Take-turns merging is guaranteed at least 0.5550 (centrality) / 0.5639 (`text_blend`) | **Not yet verified**; `team/merge_bounds.py` recomputes worst, best and overlap-fitted scores exactly from the two CSVs |
-| Simulated 0.5945 / 0.6016 at overlap 0.35, fitted to the rank sum's 0.5443 | Not yet verified; same tool |
-| Letting SmolVLM swap the top two above a margin of 3 (`arbiter_v1`) adds about +0.005 on near-identical pairs | The lead's own estimate; consistent with ours (SmolVLM's confident overrides lost 16:33 publicly) |
-| The final candidates' code | **Not in git**: `text_blend_interleave`, `text_interleave`, `arbiter_v1`, `unfamiliar_v1` exist only as ZIPs on the lead's machine. A final made on Colab needs their code committed |
+| 77 episodes have the correct text first under both centrality and reversed style, 157 only under centrality, 125 only under reversed style | **Verified** (77 / 157 / 125; with `text_blend`: 77 / 162 / 125) |
+| Take-turns merging scores at least 0.5550 (centrality first) / 0.5639 (`text_blend` first) | **Verified exactly.** No assumption about the negatives: it is the minimum over every placement. Independent placements give 0.5803 / 0.5879, the best case 0.6213 / 0.6274 |
+| 0.5945 / 0.6016 at overlap 0.35, fitted to the rank sum's 0.5443 | Close: the fit gives 0.30 here and 0.5926 for centrality first. 16 episodes of the uploaded rank sum fall outside our tie-breaking, so the fit is rough; the bound above doesn't depend on it |
+| Letting SmolVLM swap the top two above a margin of 3 (`arbiter_v1`) adds about +0.005 | The lead's own estimate, now revised to about zero (SmolVLM's confident overrides lost 16:33 publicly). Agreed |
+| The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`team/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/submission_regime.py` and `team/submission_fusion.py` use a different smoothing that was never uploaded |
+
+So `text_blend_interleave` beats every uploaded rule even in its worst case, by +0.012 over
+`text_blend`, and probably by about +0.04.
+
+**Training the order aligner (Fact, local).** `team/train_order.py` trains low-rank corrections and
+a position prior on frozen SigLIP features, with the training descriptions as positives and code-made
+reorderings as negatives. Shuffling every event let the opening summary sentence give the order away
+and made validation worse (LLM-written order changes 0.605 → 0.443). Keeping the opening fixed and
+swapping two events: 0.605 → 0.59-0.63 over five epochs, training accuracy 0.25-0.30. That is
+within noise, so the untrained check is kept.
 
 ## 6. Open questions, cheapest resolution first
 
@@ -141,12 +155,12 @@ against about 20-25% by chance.
 
 ## 7. Strategy from here
 
-1. Keep centrality as the safe final until something beats it in a paired comparison.
-2. Verify the take-turns bound with the CSVs. If it holds, `text_blend_interleave` is the leading
-   final candidate, because even its worst case beats every uploaded rule.
-3. Upload the order check alone. If its CSV shows it picks the correct text where centrality and
-   reversed style both fail, use it to decide between the top picks, as `arbiter_v1` does with
-   SmolVLM.
-4. Spend the remaining uploads on information: shortness, characters.
-5. Commit the final rule's code, and start the final Colab run by 10:30
-   (`team/final_colab_text.ipynb`, plus SigLIP if the order check is in).
+1. **Upload `text_blend_interleave` first.** Its worst case (0.5639) beats every uploaded rule, so
+   it is the safe final unless something beats it in a paired comparison.
+2. Upload the order check alone (`probe_order.zip`). With its CSV, `team/merge_bounds.py --third`
+   scores taking turns among three rules without another upload. Use the order check only if that
+   gain holds in the worst case or is large in the independent case.
+3. Spend remaining uploads on information: shortness, characters.
+4. Build the final on Colab by 10:30 with the lead's `team/final_text_colab.ipynb` (it builds
+   `text_blend_interleave` with the measured style score), adding SigLIP only if the order check
+   is in.
