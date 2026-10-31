@@ -111,6 +111,13 @@ Candidates that only reorder events share every event, so text preferences can't
 bias; the plain version is kept. About 0.07 s per episode on an RTX 5070. Unknown: how many test
 episodes have order-only negatives, and whether SigLIP sees order as well in the test's videos.
 
+As an upload, `cuda/probe_order.zip` (`team/submission_order.py`, 709 MiB, 0.06 s per episode)
+ranks by order fit alone. It is a probe, not a final rule: it scores only order, so content swaps
+fool it (150 episodes, right / wrong video: `reorder` 0.477 / 0.407, `swapped_action` 0.403 /
+0.476, `added_action` 0.555 / 0.521; one-event candidates tie and fall to centrality). What to
+read from its public CSV: how often it puts the correct text first where centrality doesn't,
+against about 20-25% by chance.
+
 **The team lead's merge analysis (`origin/main` 2bd6d28), checked so far:**
 
 | Claim | Status |

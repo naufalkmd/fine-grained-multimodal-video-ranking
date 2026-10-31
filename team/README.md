@@ -83,6 +83,10 @@ the reason.
 - `submission_fusion.py`, `export_fusion.py`: text signals (centrality, unfamiliar words or characters
   under counts from the training descriptions, shortness) combined by one signal, interleaving or
   public rank shares (`bayes`), optionally with the structure gate. Set in `weights/rule.json`.
+- `order_check.py`: checks locally whether a candidate's events fit the frames in the stated order
+  (SigLIP, no training). `submission_order.py`, `export_order.py`: the same as an upload probe.
+- `merge_bounds.py`: exact worst, best and overlap-fitted scores for merging two rules, from their
+  public per-episode CSVs.
 - `submission_regime.py`, `export_regime.py`: centrality first when some candidate's words all
   survive in the others (the rest look like edits of it), otherwise unfamiliar wording first; the
   two alternate after that. Text only.
