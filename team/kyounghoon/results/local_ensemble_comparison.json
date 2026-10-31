@@ -1,0 +1,172 @@
+{
+  "method": "Equal mean of scalar candidate scores across fixed seeds 2026,2027,2028; not mean of seed metrics. Ties use same original evaluation tie policies. No tuning.",
+  "ensembles": {
+    "original": {
+      "random": {
+        "episodes": 834,
+        "reward": 0.9772182254196643,
+        "top1": 0.960431654676259
+      },
+      "team": {
+        "episodes": 834,
+        "reward": 0.918015587529976,
+        "top1": 0.8537170263788969
+      },
+      "minimal_pair": {
+        "episodes": 622,
+        "episode_macro_win": 0.6353161843515541,
+        "pair_win": 0.6741397288842544
+      },
+      "minimal_type": {
+        "attribute_color": {
+          "episodes": 391,
+          "episode_macro_win": 0.7480818414322251
+        },
+        "attribute_shape": {
+          "episodes": 46,
+          "episode_macro_win": 0.6340579710144928
+        },
+        "spatial_left_right": {
+          "episodes": 41,
+          "episode_macro_win": 0.43902439024390244
+        },
+        "action_lift_lower": {
+          "episodes": 224,
+          "episode_macro_win": 0.45089285714285715
+        },
+        "object_noun": {
+          "episodes": 254,
+          "episode_macro_win": 0.6614173228346457
+        },
+        "action_push_pull": {
+          "episodes": 46,
+          "episode_macro_win": 0.5760869565217391
+        },
+        "action_open_close": {
+          "episodes": 15,
+          "episode_macro_win": 0.4
+        },
+        "action_fasten_unfasten": {
+          "episodes": 17,
+          "episode_macro_win": 0.35294117647058826
+        },
+        "state_empty_full": {
+          "episodes": 5,
+          "episode_macro_win": 0.4
+        },
+        "state_open_closed": {
+          "episodes": 5,
+          "episode_macro_win": 0.8
+        }
+      },
+      "minimal_5choice": {
+        "episodes": 399,
+        "reward": 0.549812030075188,
+        "top1": 0.3208020050125313
+      }
+    },
+    "minimal": {
+      "random": {
+        "episodes": 834,
+        "reward": 0.9781175059952039,
+        "top1": 0.960431654676259
+      },
+      "team": {
+        "episodes": 834,
+        "reward": 0.9178657074340527,
+        "top1": 0.8525179856115108
+      },
+      "minimal_pair": {
+        "episodes": 622,
+        "episode_macro_win": 0.6797963558413719,
+        "pair_win": 0.720281543274244
+      },
+      "minimal_type": {
+        "attribute_color": {
+          "episodes": 391,
+          "episode_macro_win": 0.8109548167092924
+        },
+        "attribute_shape": {
+          "episodes": 46,
+          "episode_macro_win": 0.6666666666666666
+        },
+        "spatial_left_right": {
+          "episodes": 41,
+          "episode_macro_win": 0.5
+        },
+        "action_lift_lower": {
+          "episodes": 224,
+          "episode_macro_win": 0.47767857142857145
+        },
+        "object_noun": {
+          "episodes": 254,
+          "episode_macro_win": 0.7198162729658792
+        },
+        "action_push_pull": {
+          "episodes": 46,
+          "episode_macro_win": 0.532608695652174
+        },
+        "action_open_close": {
+          "episodes": 15,
+          "episode_macro_win": 0.4
+        },
+        "action_fasten_unfasten": {
+          "episodes": 17,
+          "episode_macro_win": 0.35294117647058826
+        },
+        "state_empty_full": {
+          "episodes": 5,
+          "episode_macro_win": 0.8
+        },
+        "state_open_closed": {
+          "episodes": 5,
+          "episode_macro_win": 0.8
+        }
+      },
+      "minimal_5choice": {
+        "episodes": 399,
+        "reward": 0.6008771929824561,
+        "top1": 0.3659147869674185
+      }
+    }
+  },
+  "minimal_minus_original": {
+    "random": {
+      "episodes": 834,
+      "mean_delta": 0.0008992805755395684,
+      "ci95": [
+        -0.004796163069544364,
+        0.006594724220623501
+      ],
+      "bootstrap_samples": 10000
+    },
+    "team": {
+      "episodes": 834,
+      "mean_delta": -0.00014988009592326138,
+      "ci95": [
+        -0.008992805755395683,
+        0.008842925659472423
+      ],
+      "bootstrap_samples": 10000
+    },
+    "minimal_pair": {
+      "episodes": 622,
+      "mean_delta": 0.04448017148981779,
+      "ci95": [
+        0.027867095391211145,
+        0.06095927116827439
+      ],
+      "bootstrap_samples": 10000
+    },
+    "minimal_5choice": {
+      "episodes": 399,
+      "mean_delta": 0.05106516290726817,
+      "ci95": [
+        0.02788220551378446,
+        0.07424812030075188
+      ],
+      "bootstrap_samples": 10000
+    }
+  },
+  "limitation": "Development paired episode bootstrap conditional on fitted checkpoints; same augmentation rules in train and validation; excludes rule-label noise, checkpoint selection and hidden-test distribution shift."
+}

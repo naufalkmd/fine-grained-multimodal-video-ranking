@@ -15,7 +15,9 @@ REQUIRED = {
     "models/mpnet/config.json", "models/mpnet/model.safetensors",
     "models/mpnet/tokenizer_config.json", "models/mpnet/tokenizer.json",
 }
-OPTIONAL = {"ranker_model.py"}
+OPTIONAL = {"ranker_model.py", "submission_ranker.py", "submission_siglip.py", "submission_central.py",
+            "submission_siglip_diff.py", "weights/reference_frames.pt",
+            "submission_evidence.py"}
 
 
 def package(source, output, force=False):

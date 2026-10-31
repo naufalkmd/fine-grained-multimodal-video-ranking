@@ -1,0 +1,23 @@
+{
+  "source": "user-reported leaderboard result",
+  "split": "PUBLIC",
+  "score": 0.363,
+  "total_episodes": 573,
+  "evaluated_episodes": 573,
+  "errors_display": "0 / 0",
+  "time_seconds": 59.94,
+  "model": "E0 minimal-negative training, 3-seed equal-score ensemble",
+  "seeds": [
+    2026,
+    2027,
+    2028
+  ],
+  "best_epochs": [
+    4,
+    3,
+    4
+  ],
+  "submission_file": "siglip_minimal_3seed_submission.zip",
+  "submission_bytes": 379382302,
+  "submission_sha256": "ac7e50137f7efefb54ee8475d3a9eab0255c6b6ca58d1c9b87d3df4962ace8ee"
+}

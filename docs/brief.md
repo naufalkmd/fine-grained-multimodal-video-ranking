@@ -51,6 +51,9 @@ only the per-episode formula.
   model loading.
 - **Reproducibility:** all submissions must reproduce within 24 hours on one
   NVIDIA T4 with 16 GB VRAM.
+- **Final submission:** the team's best submission. Reported by a team member; we
+  haven't confirmed if "best" means the highest public score, or if a submission
+  can be removed or chosen.
 - **Where to run:** experiments may run on personal GPUs. The final model must be
   produced on Colab.
 

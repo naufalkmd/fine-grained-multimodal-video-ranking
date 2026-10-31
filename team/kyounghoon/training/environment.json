@@ -1,0 +1,30 @@
+{
+  "python": "3.12.3",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "torchvision": "0.23.0+cu128",
+    "torchaudio": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "numpy": "2.5.4",
+    "Pillow": "12.3.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "sentence-transformers": "5.4.0",
+    "einops": "0.8.2",
+    "timm": "1.0.30",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "opencv-python-headless": "4.14.0.94",
+    "peft": "0.18.1",
+    "accelerate": "1.15.0",
+    "bitsandbytes": "0.50.2",
+    "cloudpickle": "3.1.2",
+    "joblib": "1.6.0",
+    "narwhals": "2.28.0",
+    "threadpoolctl": "3.7.0"
+  },
+  "gpu": "Tesla T4",
+  "cuda": "12.8",
+  "vram_gib": 14.56317138671875
+}

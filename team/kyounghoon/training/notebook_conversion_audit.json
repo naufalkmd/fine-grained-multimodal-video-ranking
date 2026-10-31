@@ -1,0 +1,28 @@
+{
+  "version": "source-only-wrapper-v1",
+  "original_notebook_sha256": "d7160c1e8ab0c6766739c0dead88cf64fa2f175034cc2a1eb6a09a71ba2a0939",
+  "external_portable_models": {
+    "name": "portable_models.json",
+    "bytes": 11210193,
+    "sha256": "57250ff11b7f487506f1ea497e54c32733a28ad4b784bbb11151ae9c0097e34c"
+  },
+  "changed_cells": [
+    0,
+    1,
+    5
+  ],
+  "unchanged_source_payload_files": 36,
+  "training_logic": "All embedded Python sources and remaining execution cells unchanged; only portable data location externalized.",
+  "requirements_default": [
+    "inthon2026_train.zip",
+    "portable_models.json",
+    "factorial_weights.zip or three E0 seed best.pt files"
+  ],
+  "requirements_train_control_true": [
+    "inthon2026_train.zip",
+    "portable_models.json"
+  ],
+  "warning": "No actual training or inference was rerun by this wrapper-only conversion.",
+  "repository_notebook_sha256": "90042ca8a5ba2d6fdb16bd9c61d4bf5be30d1e0b2c4264d6c618dee568fc2b11",
+  "repository_text_newlines": "LF"
+}
