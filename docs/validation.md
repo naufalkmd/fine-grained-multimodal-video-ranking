@@ -139,11 +139,32 @@ A simulation calibrated to the public scores, assuming the two methods' errors a
 | Qwen + `word_swap` model, normal | 0.780 | 0.652 |
 | Same model, image evidence | 0.684 | 0.315 |
 
+**Public: 0.3370, the lowest so far and about 2.5 standard errors below chance (0.375).** Local reliance on the image didn't carry over to the test. Removing the text habit probably removed useful signal, leaving little else. The wrong-video test measures reliance on the image, not skill on another benchmark. Across submissions so far, more reliance on the image tended to score lower, though that's a small, uncontrolled comparison:
+
+| Submission | Public |
+|---|---:|
+| `text_centrality` (no image) | 0.5515 |
+| `siglip_central_v1` | 0.4682 |
+| `q1_central05` | 0.4068 |
+| `temporal_word_swap_v1` | 0.3968 |
+| `team/kyounghoon` SigLIP ensemble | 0.3630 |
+| `h-v1` | 0.3586 |
+| `b` | 0.3469 |
+| `temporal_qwen_evidence_v1` | 0.3370 |
+
+Don't build on image evidence. The simulation says combining needs an image model of about 0.45 alone, so the shortlist ZIPs weren't uploaded.
+
 That model was trained with an `--external-sets` option that has since been removed in favour of `--qwen-candidates`, which also flips Qwen episodes. Retraining on Colab needs one of them chosen, and retesting.
+
+### Video contrast loss
+
+`--video-contrast-weight` also asks which of 12 batch videos fits each correct text, which text alone can't answer. On the `qwen` set it lowered the wrong-video score (0.460 against 0.652), but order pairing fell to 0.533 from 0.743. It also uses `--qwen-candidates`, unlike the model it's compared with, so that isn't a single change. Not uploaded, and not recommended.
 
 ### Shortlist
 
 `team/submission_shortlist.py` lets centrality pick the top candidates, then orders them by image evidence, so the video decides first place. Local results are in the experiment log. Shortlists of 3 depend more on the video than 2 on the `qwen` set (wrong video 0.521 against 0.724).
+
+Not uploaded, because the image model alone scored 0.3370.
 
 ### Tried and dropped
 
@@ -218,6 +239,8 @@ Submission names used by the team:
 | 2026-11-01 00:27 | `siglip_central_v1`: rank average of SigLIP and centrality, no training. 150 episodes per set. `cuda/siglip_central_v1.zip` | None | All types | - | `qwen` 0.802, `similar_episode` 0.689, `lexical` 0.746, `random` 0.639. Wrong video: `qwen` 0.710, `similar_episode` 0.477 | **0.4682**, reported without a filename, assumed to be this ZIP |
 | 2026-11-01 00:57 | `siglip_diff_central_v1`: SigLIP on the words that differ between candidates, rank averaged with centrality, no training. `cuda/siglip_diff_central_v1.zip` | None | All types | - | Difference matching alone: `qwen` 0.255, `added_action` 0.233, `word_swap` 0.599, `similar_episode` 0.836. With centrality: `qwen` 0.719, `added_action` 0.537, `similar_episode` 0.645. Wrong video with centrality: `qwen` 0.600 | Not submitted, because it ranks correct answers low on edits |
 | 2026-11-01 01:04 | `siglip_central_3to1`: centrality rank counts 3 times SigLIP rank, no training. `cuda/siglip_central_3to1.zip` | None | All types | - | `qwen` 0.981, `word_swap` 0.995, `swapped_action` 0.979, `similar_episode` 0.485, `lexical` 0.599, `random` 0.428 (centrality alone: 0.997, 0.995, 0.974, 0.434, 0.555, 0.352). 200-323 episodes per set | Not submitted |
-| 2026-11-01 01:16 | `temporal_qwen_evidence_v1`: `temporal_qwen_word_swap_v1` scored as logit on this video minus mean logit on 32 fixed training videos. `cuda/temporal_qwen_evidence_v1.zip` | same as H + `word_swap`, `qwen` | `added_action` | `qwen` 0.684, `similar_episode` 0.809 | Wrong video: `qwen` 0.315, `similar_episode` 0.421 | Not submitted |
+| 2026-11-01 01:16 | `temporal_qwen_evidence_v1`: `temporal_qwen_word_swap_v1` scored as logit on this video minus mean logit on 32 fixed training videos. `cuda/temporal_qwen_evidence_v1.zip` | same as H + `word_swap`, `qwen` | `added_action` | `qwen` 0.684, `similar_episode` 0.809 | Wrong video: `qwen` 0.315, `similar_episode` 0.421 | **0.3370** (573 episodes) |
 | 2026-11-01 01:53 | Combinations of `temporal_qwen_evidence_v1` and centrality, on the `qwen` set: shortlist 2 / shortlist 3 / rank 1:1 / rank 2:1. `cuda/evidence_shortlist2_v1.zip`, `cuda/evidence_shortlist3_v1.zip` | as above | `added_action` | `qwen` 0.884 / 0.804 / 0.868 / 0.959 | Wrong video: `qwen` 0.724 / 0.521 / 0.599 / 0.821 | Not submitted |
+| 2026-11-01 02:26 | `temporal_qwen_contrast_v1`: H + `word_swap`, `--qwen-candidates` on half of episodes, `--video-contrast-weight 1`, 60 fixed epochs, best epoch 57. `cuda/temporal_qwen_contrast_v1.zip` | same as H + `word_swap`, `qwen` | `added_action` | `qwen` 0.622, `word_swap` 0.489, `similar_episode` 0.829, `lexical` 0.749 | `added_action` 0.845. Wrong video: `qwen` 0.460. Order pairing 0.533 | Not submitted |
+| 2026-11-01 02:26 | `temporal_qwen_contrast_evidence_v1`: the same model scored by image evidence. `cuda/temporal_qwen_contrast_evidence_v1.zip` | as above | `added_action` | `qwen` 0.537, `similar_episode` 0.840 (150 episodes) | Wrong video: `qwen` 0.320, `similar_episode` 0.383 | Not submitted |
 | 2026-11-01 00:20 | Centrality alone (`cuda/central_submission.zip`) | None | All types | - | as the 23:20 row | **0.5515** (573 episodes) |
