@@ -217,6 +217,46 @@ Differing tokens beat the whole text on every set, and this is the first image m
 
 Publicly, `fill_central_v1` (1:1 with centrality) scored 0.5044. That is the best equal-weight image combination so far (`siglip_central_v1` 0.4682) but below centrality. The earlier simulation, which assumes independent errors, implies about 0.41 for `fill_v1` alone, under the roughly 0.45 where combining starts to help. It ran within the time limit at 8 frames.
 
+### Merging the text rules
+
+The public CSVs give the correct text's rank under each rule, so merging rules can be compared with no upload. The negatives' places are unknown, so they're drawn, with overlap rho: the chance the two rules order the negatives alike. rho = 0.35 reproduces the observed 1:1 rank sum (0.5443), and the share ranked first by (centrality rank, flip rank) group is off by 0.034 on average.
+
+| Merge with reversed style, rho = 0.35 | Centrality | `text_blend` |
+|---|---:|---:|
+| **Take turns** | **0.5945** | **0.6016** |
+| Likelihood from public ranks | 0.5858 | 0.5912 |
+| Points 1, 0.5, 0.25... (same as 1/rank here) | 0.5695 | 0.5696 |
+| Rank sum | 0.5447 | 0.5394 |
+| Take turns, worst case from the CSVs, no simulation | 0.5550 | **0.5639** |
+
+The worst case assumes every place not forced by the two ranks goes against the correct text. If private behaves like public, `text_blend` first beats `text_blend` alone on the private 1,337 episodes with probability 0.88 at the worst case, and above 0.99 at any overlap we simulated. These are estimates: only `text_blend` and the rank sum have public scores.
+
+### The video deciding between two candidates
+
+`team/submission_arbiter.py` keeps the turn-taking but lets SmolVLM put the second rule's pick first when the frames favour it by more than a threshold. 100 episodes per set; correct text against each negative. "Right" is how often the frames' margin picks the correct text.
+
+| Margin above | Share of pairs | `word_swap` + `qwen`, right / wrong video | Share of pairs | `swapped_action` + `added_action` + `reorder`, right / wrong video |
+|---:|---:|---:|---:|---:|
+| 0 | 1.00 | 0.613 / 0.476 | 1.00 | 0.719 / 0.466 |
+| 1 | 0.41 | 0.716 / 0.476 | 0.78 | 0.772 / 0.452 |
+| 2 | 0.18 | 0.790 / 0.491 | 0.57 | 0.842 / 0.470 |
+| 3 | 0.09 | 0.786 / 0.632 | 0.44 | 0.894 / 0.451 |
+
+Larger margins are more accurate with the right video and stay near 0.5 with the wrong one, up to a margin of 2. Above that the pairs are few. Subtracting the same margin under 8 fixed training videos brings the wrong-video pair win nearer 0.5 on some sets, but isn't better overall: `word_swap` 0.685 / 0.537, `qwen` 0.568 / 0.512, `swapped_action` 0.907 / 0.485, `added_action` 0.650 / 0.450, `reorder` 0.627 / 0.480 (without it: 0.625 / 0.463, 0.600 / 0.490, 0.863 / 0.365, 0.775 / 0.600, 0.520 / 0.432).
+
+The gain from overruling depends on how often the frames overrule each kind of pair. Public counts give 125 episodes where only the reversed-style pick is correct, and 157 where only centrality's is. Local stand-ins, 200 episodes per set across `word_swap`, `qwen`, `swapped_action`, `added_action` and `reorder`: the correct text being the least familiar, with the most central negative (58 pairs, mostly from `swapped_action` and `added_action`, so noisy), and the correct text against the least familiar negative (942 pairs). Gain = 0.5 x (125 x share overruled when right - 157 x share overruled when wrong) / 573.
+
+| Threshold | Right video: overruled when right / when wrong, gain | Wrong video: same |
+|---:|---:|---:|
+| 0 | 0.724 / 0.315, +0.036 | 0.345 / 0.515, -0.033 |
+| 1 | 0.621 / 0.132, +0.050 | 0.207 / 0.310, -0.020 |
+| 2 | 0.466 / 0.063, +0.042 | 0.172 / 0.193, -0.008 |
+| 3 | 0.379 / 0.027, +0.038 | 0.138 / 0.107, +0.000 |
+
+A threshold of 3 keeps most of the gain and removes the loss when the frames carry no information, so `arbiter_v1` uses it. It wasn't tuned on public results. The gain is likely overstated for the test: near-identical pairs rarely reach a margin of 3 (9% of `word_swap` and `qwen` pairs, right 79% of the time), which alone would give about +0.005.
+
+A 4-epoch fine-tune was stopped during its first epoch. At about 2 s per batch on an RTX 5070 with the GPU to itself, an epoch takes about 28 minutes, so a T4 at 2 to 4 times slower couldn't reproduce 4 epochs by the deadline. Two epochs would take about 2 to 4 hours there.
+
 ### Audit of our assumptions
 
 Checked on 2026-11-01. Per-episode CSVs were used in aggregate only.
@@ -253,7 +293,7 @@ All from the leaderboard (573 episodes, chance 0.375, gaps under about 0.03 are 
 | `temporal_qwen_evidence_v1` | Yes | 0.3370 |
 | `text_style` | No | 0.2411 |
 
-Built and validated with no score reported to us: `text_interleave`, `fill_v1`, `text_style_flip`, `text_style_central`, `compare_v1`, `siglip_central_3to1`, `text_shortest`, `text_consensus`, `text_meaning`.
+Built and validated with no score reported to us: `text_blend_interleave`, `arbiter_v1`, `text_interleave`, `text_interleave_small`, `unfamiliar_v1`, `fill_v1`, `text_style_flip`, `text_style_central`, `compare_v1`, `siglip_central_3to1`, `text_shortest`, `text_consensus`, `text_meaning`.
 
 ## Experiment log
 
@@ -339,4 +379,7 @@ Submission names used by the team:
 | 2026-11-01 04:50 | `text_style_flip`: `text_style` reversed (`style_sign` -1), direction chosen from its public score. `cuda/text_style_flip.zip` | None (counts only) | All types | - | Counts include these validation descriptions, so these are unfair: `similar_episode` 0.406, `lexical` 0.393, `swapped_action` 0.222, `added_action` 0.193, `qwen` 0.128, `word_swap` 0.086 | Not submitted |
 | 2026-11-01 04:50 | `text_style_flip_central`: `text_style_flip` + centrality ranks, 1:1. `cuda/text_style_flip_central.zip` | None (counts only) | All types | - | Same unfair counts: `swapped_action` 0.608, `added_action` 0.574, `lexical` 0.502, `qwen` 0.461, `word_swap` 0.438, `similar_episode` 0.426 | **0.5443**, a tie with centrality (0.5515) |
 | 2026-11-01 05:45 | `text_interleave`: centrality's top, then reversed style's top, and so on in turn; rule chosen from public CSV statistics. `cuda/text_interleave.zip` | None (counts only) | All types | - | Checked on 6,778 local rankings: first place always equals centrality's, second is as designed. Local scores aren't informative for this rule | Not uploaded yet; simulated about 0.595 |
+| 2026-11-01 06:37 | `text_interleave_small`: `text_interleave` without the kit's encoders, which it never loads (`team/package_small.py`). `cuda/text_interleave_small.zip`, 0.2 MiB | None (counts only) | All types | - | Same rankings as `text_interleave` on 6,778 local rankings; passes the kit's interface check from another folder in isolated mode | Not uploaded yet |
+| 2026-11-01 07:07 | `text_blend_interleave`: `text_blend`'s top, then reversed style's top, and so on in turn; rule chosen from public CSV statistics. `cuda/text_blend_interleave.zip`, 349 MiB. Word-pair counts match `text_interleave`. Rehearsed through the Colab steps locally | None (counts only) | All types | - | Checked on 6,778 local rankings: first place always equals `text_blend`'s, second is as designed. Local scores aren't informative for this rule | Not uploaded yet; worst case 0.5639, simulated about 0.60 |
+| 2026-11-01 07:21 | `arbiter_v1`: `text_blend_interleave`, with `smolvlm_ft_v1` putting the second pick first when the frames favour it by more than 3 (8 frames, w = 1). `cuda/arbiter_v1.zip`, 773 MiB. 0.34 s per episode locally | Correct descriptions only | All types | - | 100 episodes per set, text only / right video / wrong video, share overruled right / wrong: `word_swap` 1.000 / 0.995 / 0.995, 0.01 / 0.01; `qwen` 1.000 / 0.985 / 0.980, 0.03 / 0.04; `swapped_action` 0.980 / 0.970 / 0.810, 0.02 / 0.34; `added_action` 1.000 / 0.980 / 0.975, 0.04 / 0.05; `reorder` 0.499 / 0.489 / 0.489, 0.02 / 0.06; `similar_episode` 0.395 / 0.490 / 0.410, 0.37 / 0.33. These sets nearly hand the text rule the answer, so the override can rarely help on them | Not uploaded yet |
 | 2026-11-01 06:11 | `unfamiliar_v1`: least expected wording under `smolvlm_ft_v1` with no frames, on tokens that differ, averaged per token. No images. `cuda/unfamiliar_v1.zip`, 773 MiB. Direction chosen from `text_style`'s public score. About 0.08 s per episode locally | Correct descriptions only | All types | - | 200 episodes per set; low is expected, because local negatives point the other way on this signal: `word_swap` 0.043, `swapped_action` 0.067, `qwen` 0.231, `added_action` 0.272, `lexical` 0.426, `similar_episode` 0.454. Rank correlation with word-pair familiarity reversed: +0.25 to +0.60 | Not uploaded yet |
