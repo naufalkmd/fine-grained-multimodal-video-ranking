@@ -116,6 +116,12 @@ another package.
 - Local generative output does not have to be identical on every run, but the
   process must still be reproducible through code.
 
+Team decisions, stricter than the rules above:
+
+- Don't use word lists written by Claude, Codex or other AI services.
+- Don't use outside dictionaries such as WordNet.
+- Don't edit or hand-pick descriptions.
+
 ## Distillation
 
 Prohibited, whether or not the teacher model is in the submission. Do not use a

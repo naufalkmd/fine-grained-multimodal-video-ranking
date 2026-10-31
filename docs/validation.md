@@ -71,6 +71,36 @@ Reversed or shuffled frames are a cheap way to check that a model learns order,
 but some actions look much the same in reverse, so some of these labels will be
 wrong. Don't rely on this as the only negative type.
 
+## Ablation results
+
+Each step adds one change to the step above it, except G and H, which each change F. All runs use seed 2026 unless noted and the same fixed candidates, and hold `added_action` out of training. These scores use our own generated negatives, so they rank these models against each other but don't predict the leaderboard.
+
+- **Clean rank score:** mean of `similar_episode` and `lexical`, the two sets with no detected text leak. Wrong-video scores on both sit at about 0.36-0.39, near the 0.375 chance level.
+- **Order pairing:** whether reversing the frames changes which text order the model prefers. Text cues cancel out, and chance is 0.5.
+
+| Run | Change | Epochs | `similar_episode` | `lexical` | Clean rank score | Order pairing |
+|---|---|---:|---:|---:|---:|---:|
+| Baseline | Kit model; `lexical` is from a second machine's run | 19 | 0.721 | 0.658 | 0.690 | About 0.5 |
+| A | Ranking loss; random negatives | 50 | 0.789 | 0.734 | 0.761 | 0.500 |
+| B | A + hard negatives | 50 | 0.769 | 0.690 | 0.730 | 0.500 |
+| C | B + temporal layers | 26 | 0.793 | 0.740 | 0.766 | 0.569 |
+| D | C + cross-attention | 15 | 0.800 | 0.731 | 0.765 | 0.534 |
+| E | D + reverse loss | 22 | 0.796 | 0.725 | 0.760 | 0.593 |
+| F | E + flipping | 46 | 0.809 | 0.754 | 0.781 | 0.668 |
+| G | F without cross-attention | 60 | 0.829 | 0.772 | 0.800 | 0.658 |
+| H | F + `lexical` negatives | 50 | 0.819 | 0.762 | 0.791 | 0.728 |
+| H, seed 2027 | Repeat of H | 60 | 0.815 | 0.769 | 0.792 | 0.690 |
+
+What this shows so far:
+
+- Hard negatives alone lower the clean score (A to B), and mostly teach text cues.
+- Flipping gives the largest order gain, and removes most of the `reorder` text cue.
+- With a fair 60-epoch run, G matches F's order signal without cross-attention, so cross-attention may not be needed.
+- With flipping, order pairing stays near 0.5 until about epoch 25. Patience 8 can end a run before that, so don't use it with flipping. C, D and E also stopped early, so they may be understated.
+- Baseline to A also changes the learning rate, batch size and number of negatives, so that gain can't be credited to the ranking loss alone.
+
+Not covered: nothing here tests single-word differences such as "buttoning" and "unbuttoning", and no model has a public score yet.
+
 ## Experiment log
 
 Record every experiment that gets a local score.
@@ -92,3 +122,5 @@ Record every experiment that gets a local score.
 | 2026-10-31 18:22 | Ablation G: F without cross-attention. One seed; 50-epoch cap; same selection rule | same as B | `added_action`, `lexical` | `random` 0.939, `reorder` 0.327, `similar_episode` 0.817, `swapped_action` 0.866 | `added_action` 0.809; `lexical` 0.762; `mixed` 0.605. Wrong video: `reorder` 0.312. Order pairing 0.538 | Not submitted |
 | 2026-10-31 18:43 | Ablation H: F + `lexical` negatives. One seed; best epoch was the 50-epoch cap; same selection rule | same as B + `lexical` | `added_action` | `random` 0.934, `reorder` 0.502, `similar_episode` 0.819, `swapped_action` 0.871, `lexical` 0.762 | `added_action` 0.761; `mixed` 0.723. Wrong video: `reorder` 0.456. Order pairing 0.728 | Not submitted |
 | 2026-10-31 18:50 | H with seed 2027. Early stopping ended it at epoch 15, before order pairing starts rising (around epoch 25 in F and H), so it isn't a fair repeat. G (16 epochs) was cut off the same way | same as H | `added_action` | `random` 0.925, `reorder` 0.273, `similar_episode` 0.805, `swapped_action` 0.849, `lexical` 0.757 | `added_action` 0.832; `mixed` 0.582. Wrong video: `reorder` 0.299. Order pairing 0.545 | Not submitted |
+| 2026-10-31 19:15 | H with seed 2027, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.815, `lexical` 0.769 | `added_action` 0.812. Wrong video: `added_action` 0.498. Order pairing 0.690 | Not submitted |
+| 2026-10-31 19:35 | G, seed 2026, 60 fixed epochs, no early stopping | same as B | `added_action`, `lexical` | `similar_episode` 0.829 | `added_action` 0.801; `lexical` 0.772. Wrong video: `added_action` 0.513. Order pairing 0.658 | Not submitted |
