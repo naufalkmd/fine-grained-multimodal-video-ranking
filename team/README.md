@@ -23,7 +23,8 @@ the reason.
 
 | Kit file | Change | Why |
 |---|---|---|
-| `.gitignore` | Added `Data/` | Keeps the dataset out of git on case-sensitive systems |
+| `.gitignore` | Added `Data/` and `*_submission/` | Keeps the dataset and exported submissions out of git |
+| `package.py` | Added `ranker_model.py` as an optional file | Ranking models need it, and the ZIP otherwise drops files that aren't listed |
 
 ## Files
 
@@ -33,6 +34,10 @@ the reason.
   resampled every epoch from the training split only, and saved as a record.
 - `rank_eval.py`: scores an exported submission on fixed 5-candidate validation sets, and runs
   the scoring, text-only leak and frame-order checks.
+- `ranker_model.py`: the `mean_pool` and `temporal` models. Exported with the submission.
+- `train_ranker.py`: trains a model on generated negatives, using a listwise ranking loss.
+- `submission_ranker.py`: exported as the submission's `submission.py`.
+- `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `tests/`: tests for the above.
 
 ```bash
@@ -41,4 +46,11 @@ python -m team.rank_eval --config cuda/config.json --run-dir cuda/outputs/baseli
     --submission-dir cuda/sample_submission --trained-on random
 python -m team.train_negatives --config cuda/config.json --run-dir cuda/outputs/baseline \
     --k 4 --mix lexical=2,similar_episode=2 --epochs 20
+
+python -m team.train_ranker --config cuda/config.json --splits cuda/outputs/baseline/splits.json \
+    --train-negatives reorder,swapped_action,similar_episode,random --model temporal \
+    --output-dir cuda/outputs/temporal_v2
+python -m team.export_ranker --checkpoint cuda/outputs/temporal_v2/best.pt \
+    --output-dir cuda/temporal_v2_submission
+python package.py --submission-dir cuda/temporal_v2_submission --output cuda/temporal_v2.zip
 ```

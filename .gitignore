@@ -14,6 +14,7 @@ models/
 outputs/
 colab_runs/
 sample_submission/
+*_submission/
 *.zip
 *.pt
 *.safetensors

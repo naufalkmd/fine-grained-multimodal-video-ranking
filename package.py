@@ -15,6 +15,7 @@ REQUIRED = {
     "models/mpnet/config.json", "models/mpnet/model.safetensors",
     "models/mpnet/tokenizer_config.json", "models/mpnet/tokenizer.json",
 }
+OPTIONAL = {"ranker_model.py"}
 
 
 def package(source, output, force=False):
@@ -28,7 +29,7 @@ def package(source, output, force=False):
             continue
         if path.is_symlink():
             raise ValueError(f"Do not submit symbolic links: {relative}")
-        if path.is_file() and (relative.as_posix() in REQUIRED
+        if path.is_file() and (relative.as_posix() in REQUIRED | OPTIONAL
                                or relative.parts[0] == "models"):
             files.append(relative)
     missing = REQUIRED - {path.as_posix() for path in files}

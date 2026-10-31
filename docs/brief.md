@@ -44,11 +44,15 @@ only the per-episode formula.
 ## Limits
 
 - **Submission:** ZIP of inference code and weights, 1 GB at most.
+- **Public score checks:** 20 submissions. We haven't confirmed whether that is
+  per day or in total, so plan for a total of 20.
 - **Inference:** the full test set must finish within 15 minutes, with no
   internet and no external APIs. That is about 0.47 s per episode, including
   model loading.
 - **Reproducibility:** all submissions must reproduce within 24 hours on one
   NVIDIA T4 with 16 GB VRAM.
+- **Where to run:** experiments may run on personal GPUs. The final model must be
+  produced on Colab.
 
 ## Permitted models
 
@@ -111,6 +115,12 @@ another package.
   reproducible from code.
 - Local generative output does not have to be identical on every run, but the
   process must still be reproducible through code.
+
+Team decisions, stricter than the rules above:
+
+- Don't use word lists written by Claude, Codex or other AI services.
+- Don't use outside dictionaries such as WordNet.
+- Don't edit or hand-pick descriptions.
 
 ## Distillation
 
