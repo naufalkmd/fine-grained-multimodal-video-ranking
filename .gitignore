@@ -9,6 +9,7 @@ __pycache__/
 
 # Data, models and generated output
 data/
+Data/
 models/
 outputs/
 colab_runs/
