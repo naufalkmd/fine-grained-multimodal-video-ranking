@@ -1,7 +1,7 @@
 """Generate negative descriptions from the organizers' data, using code and a fixed seed.
 
 No word lists or hand-written text: every negative is built by rearranging or combining
-original descriptions. Similar episodes are found with the organizers' action labels or TF-IDF
+original descriptions, or by swapping a word for one found in the same contexts (see word_swap.py). Similar episodes are found with the organizers' action labels or TF-IDF
 word overlap (see lexical.py), not with any model's scores. Pass only one split's episodes so negatives never cross train and validation.
 """
 
@@ -13,9 +13,10 @@ from collections import Counter
 import numpy as np
 
 from team.lexical import lexical_similarity
+from team.word_swap import replacement_table, swap_one_word
 
 NEGATIVE_TYPES = ("reorder", "added_action", "swapped_action", "similar_episode", "lexical",
-                  "random")
+                  "word_swap", "random")
 MIXED_TYPES = ("reorder", "added_action", "swapped_action", "similar_episode")
 
 
@@ -63,12 +64,14 @@ class NegativeGenerator:
             for label, count in Counter(labels).items():
                 self.action_counts[index, vocabulary[label]] = count
         self._word_similarity = None
+        self._word_table = None
 
     def generate(self, index, negative_type, count, rng):
         """Up to `count` distinct negatives; fewer if this description can't produce enough."""
         make = {"reorder": self._reorder, "added_action": self._added_action,
                 "swapped_action": self._swapped_action, "similar_episode": self._similar_episode,
-                "lexical": self._lexical, "random": self._random}[negative_type]
+                "lexical": self._lexical, "word_swap": self._word_swap,
+                "random": self._random}[negative_type]
         original = self.descriptions[index]
         results = {}
         for text in make(index, count, rng):
@@ -147,6 +150,15 @@ class NegativeGenerator:
         rng.shuffle(nearest)
         for other in nearest:
             yield self.descriptions[other]
+
+    def _word_swap(self, index, count, rng):
+        if self._word_table is None:
+            self._word_table = replacement_table(self.descriptions)
+        for _ in range(count * 50):
+            text = swap_one_word(self.descriptions[index], self._word_table, rng)
+            if text is None:
+                return
+            yield text
 
     def _random(self, index, count, rng):
         for _ in range(count * 50):

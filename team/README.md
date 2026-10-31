@@ -30,6 +30,7 @@ the reason.
 
 - `negatives.py`: generates negative descriptions from the organizers' data with a fixed seed.
 - `lexical.py`: hub-corrected word-overlap similarity used by the `lexical` negative type.
+- `word_swap.py`: finds replacement words from the descriptions themselves, for `word_swap` negatives.
 - `train_negatives.py`: training negatives, k per episode with a set count from each type,
   resampled every epoch from the training split only, and saved as a record.
 - `train_rank.py`: trains the kit model on 1 correct + k negatives with `--loss listwise` or
