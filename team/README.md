@@ -41,11 +41,39 @@ the reason.
 - `train_ranker.py`: trains a model on generated negatives, using a listwise ranking loss. With
   `--mix` and `--k` it uses fixed counts per type from `train_negatives.py` and ranks 1 + k
   candidates; without them it draws 4 negatives of random types as before.
+  With `--qwen-candidates` it also trains on the short positives and single-change negatives
+  from `qwen_negatives.py`, on the share of episodes set by `--qwen-probability`.
+- `qwen_negatives.py`: asks a local Qwen3-4B-Instruct (float16, fits a T4) to rewrite each
+  description as one short sentence and make four single-change negatives. Only code rules filter
+  the output. The JSONL keeps the raw output and checks for inspection. Data goes on Drive, not git.
+- `qwen_candidates.py`: adds the test-like `qwen` set to a validation candidates file and checks
+  it for text-only cues.
+- `submission_central.py`, `export_central.py`: a text-only submission that ranks candidates by
+  how similar each is to the others, used to probe how the test negatives were made.
 - `submission_ranker.py`: exported as the submission's `submission.py`.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
   `make_final_notebook.py`, so edit that script rather than the notebook.
 - `tests/`: tests for the above.
+
+Qwen candidates, built once (about 35 minutes on an RTX 5070) and shared on Drive:
+
+```bash
+python -m team.qwen_negatives --config cuda/config.json --splits cuda/outputs/baseline/splits.json \
+    --model-dir cuda/models/qwen3-4b-instruct-2507 --output cuda/outputs/qwen/candidates_v3.jsonl
+python -m team.qwen_candidates --generated cuda/outputs/qwen/candidates_v3.jsonl \
+    --candidates cuda/outputs/validation/candidates_lexical_csls.json \
+    --output cuda/outputs/validation/candidates_qwen.json
+python -m team.train_ranker --config cuda/config.json --splits cuda/outputs/baseline/splits.json \
+    --train-negatives reorder,swapped_action,similar_episode,random,lexical --model temporal \
+    --flip-probability 0.5 --epochs 60 --patience 60 \
+    --qwen-candidates cuda/outputs/qwen/candidates_v3.jsonl --qwen-probability 0.5 \
+    --candidates cuda/outputs/validation/candidates_qwen.json --output-dir cuda/outputs/temporal/Q1_h_qwen50
+```
+
+Download the model first with `huggingface_hub.snapshot_download("Qwen/Qwen3-4B-Instruct-2507",
+local_dir="cuda/models/qwen3-4b-instruct-2507")`. It is used for augmentation only and is never
+part of a submission.
 
 Validation candidates with the `lexical` set: `rank_eval.py` builds a candidates file the first
 time it is pointed at a path that doesn't exist, using every type in `negatives.py`. Generation
