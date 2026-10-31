@@ -56,9 +56,6 @@ the reason.
 - `submission_ranker.py`: exported as the submission's `submission.py`. With `central_weight` in
   `inference_config.json` (set by `export_ranker.py --central-weight`), it adds candidate centrality.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
-- `final_colab_text.ipynb`: produces a text-only final submission (`FINAL_RULE` "central" or
-  "regime") on a T4, after the organizers' baseline training that package.py needs. Built by
-  `make_final_notebook.py --kind text`.
 - `compare_public.py`: compares public per-episode CSVs with a baseline (paired difference, sign
   test, rank moves). Keep the CSVs in `cuda/public_csv/`, which git ignores.
 - `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
@@ -99,8 +96,9 @@ the reason.
   descriptions. `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
 - `export_text.py`: creates `text_blend`, `text_interleave` or `text_blend_interleave`.
 - `package_small.py`: packages `text_interleave` without the kit's encoders, which it never loads.
-- `final_text_colab.ipynb`: produces those finals, or `arbiter`, on a T4. Built from the organizers'
-  notebook by `make_text_notebook.py`, so edit that script rather than the notebook.
+- `final_text_colab.ipynb`: **the notebook for the final.** Produces those finals, or `arbiter`, on a
+  T4, with the word-pair familiarity measured publicly. Built from the organizers' notebook by
+  `make_text_notebook.py`, so edit that script rather than the notebook.
 - `submission_fill.py`, `export_fill.py`: SmolVLM's support from the frames on only the tokens that
   differ between candidates, alone or with centrality.
 - `submission_unfamiliar.py`, `export_unfamiliar.py`: least expected wording under SmolVLM with no
