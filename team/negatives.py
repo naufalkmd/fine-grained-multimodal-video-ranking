@@ -42,6 +42,12 @@ def reorder_clauses(sentence, rng):
     return ", ".join(clauses) + ending
 
 
+def reversed_description(text):
+    """Keep the opening and reverse the rest; unchanged if there are fewer than three sentences."""
+    opening, *rest = split_sentences(text)
+    return " ".join([opening, *reversed(rest)])
+
+
 class NegativeGenerator:
     def __init__(self, descriptions, action_labels):
         if len(descriptions) != len(action_labels):
@@ -77,7 +83,7 @@ class NegativeGenerator:
         opening, *rest = self.sentences[index]
         if not rest:
             return
-        yield " ".join([opening, *reversed(rest)])
+        yield reversed_description(self.descriptions[index])
         for _ in range(count * 50):
             parts = list(rest)
             rng.shuffle(parts)
