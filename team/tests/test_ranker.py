@@ -1,5 +1,7 @@
 """Check ranking models and training helpers without any real models or data."""
 
+import io
+import json
 import random
 import sys
 from pathlib import Path
@@ -12,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from team.negatives import NegativeGenerator, reversed_description
 from team.ranker_model import MODELS, MeanPoolRanker, TemporalRanker
 from team.train_ranker import (
+    SELECTION_SETS,
     collate_frames,
     draw_negatives,
     order_pairing,
@@ -123,7 +126,7 @@ def test_sampled_negatives_are_distinct_and_fall_back_when_a_type_runs_out():
     negatives = sample_negatives(generator, 0, ["reorder"], 4, random.Random(1))
     assert len(negatives) == 4 == len(set(negatives))
     assert descriptions[0] not in negatives
-
+    assert set(negatives.values()) <= {"reorder", "random"}
 
 def test_draw_negatives_follows_a_mix_or_falls_back_to_drawn_types():
     descriptions = [f"Person {i} opens box {i % 5}. They lift cup {i % 3}. They wave." for i in range(30)]
@@ -165,3 +168,25 @@ def test_run_epoch_ranks_one_correct_and_k_negatives_also_when_flipped(monkeypat
     flat = [text for texts in batches for text in texts]
     assert all(e.description in flat for e in episodes)
     assert all(reversed_description(e.description) in flat for e in episodes)
+
+
+def test_selection_uses_only_sets_without_a_detected_text_leak():
+    assert set(SELECTION_SETS) == {"lexical", "similar_episode"}
+
+
+def test_run_epoch_records_the_candidates_it_used(monkeypatch):
+    monkeypatch.setattr("team.train_ranker.encode_tokens", lambda encoders, texts: (
+        torch.randn(len(texts), 3, 768), torch.ones(len(texts), 3, dtype=torch.bool)))
+    episodes = [TrainEpisode(i) for i in range(4)]
+    generator = NegativeGenerator([e.description for e in episodes], [["a"]] * 4)
+    frames = {e.episode_id: torch.randn(4, 768).half() for e in episodes}
+    model = TemporalRanker(hidden_dim=32, dropout=0.0)
+    record = io.StringIO()
+    run_epoch(model, torch.optim.AdamW(model.parameters()), None, frames, generator, episodes, ["random"],
+              "cpu", 0, 1, batch_size=2, reverse_weight=0.0, flip_probability=1.0, record=record)
+    rows = [json.loads(line) for line in record.getvalue().splitlines()]
+    assert {row["episode_id"] for row in rows} == {e.episode_id for e in episodes}
+    for row, episode in zip(sorted(rows, key=lambda r: r["episode_id"]), episodes):
+        assert row["flipped"] and len(row["negatives"]) == 4
+        assert row["correct"] == reversed_description(episode.description)
+        assert row["negatives"][episode.description] == "flipped_original"
