@@ -92,6 +92,35 @@ Chance is 0.375; one score's noise is about ±0.015-0.017, and paired comparison
 4. **Per-episode CSVs of every submission.** Only centrality's, three of ours and the lead's
    summaries are in one place; joint analysis of all of them is still to do.
 
+## 5a. New since the first version of this audit
+
+**Order check (Fact, local).** `team/order_check.py` splits each candidate into events, scores
+each event against each frame with SigLIP (no training), and compares the best total when events
+must take frames in their stated order with the total when they needn't. On 200 validation
+episodes:
+
+| Set | Right video | Wrong video | Right video reversed | Chance |
+|---|---:|---:|---:|---:|
+| `reorder` (5 candidates, same words, different order) | **0.495** | 0.367 | 0.371 | 0.375 |
+| Qwen `changed_order` vs the correct text, pair win | **0.620** | 0.453 | 0.425 | 0.5 |
+
+It reads event order from the frames: the right video beats the wrong one, and reversing the
+frames turns the preference around. Earlier image methods were at 0.51-0.53 on action pairing.
+Candidates that only reorder events share every event, so text preferences can't enter. Variants
+(sentence-level events, normalized scores, strict order) were within noise or added a wrong-video
+bias; the plain version is kept. About 0.07 s per episode on an RTX 5070. Unknown: how many test
+episodes have order-only negatives, and whether SigLIP sees order as well in the test's videos.
+
+**The team lead's merge analysis (`origin/main` 2bd6d28), checked so far:**
+
+| Claim | Status |
+|---|---|
+| 125 episodes have only reversed style's pick correct, 157 only centrality's | Arithmetic checks against the public first-place shares (234 and 202 episodes, 77 both); the 77 itself needs `text_style`'s CSV |
+| Take-turns merging is guaranteed at least 0.5550 (centrality) / 0.5639 (`text_blend`) | **Not yet verified**; `team/merge_bounds.py` recomputes worst, best and overlap-fitted scores exactly from the two CSVs |
+| Simulated 0.5945 / 0.6016 at overlap 0.35, fitted to the rank sum's 0.5443 | Not yet verified; same tool |
+| Letting SmolVLM swap the top two above a margin of 3 (`arbiter_v1`) adds about +0.005 on near-identical pairs | The lead's own estimate; consistent with ours (SmolVLM's confident overrides lost 16:33 publicly) |
+| The final candidates' code | **Not in git**: `text_blend_interleave`, `text_interleave`, `arbiter_v1`, `unfamiliar_v1` exist only as ZIPs on the lead's machine. A final made on Colab needs their code committed |
+
 ## 6. Open questions, cheapest resolution first
 
 | Question | How to answer | Cost |
@@ -99,16 +128,18 @@ Chance is 0.375; one score's noise is about ±0.015-0.017, and paired comparison
 | Is length a signal? | Upload `probe_short.zip` | 1 upload |
 | Is character-level writing a stronger signal than word pairs? | Upload `probe_chars.zip` | 1 upload |
 | Does interleaving the two text signals gain? | Lead uploads `text_interleave` | 1 upload |
-| Can the frames tell event order on our data? | SigLIP sentence-to-frame alignment on `reorder` and Qwen `changed_order`, right vs wrong video | Local, about 1 hour |
-| How many test episodes are order-only? | Not observable directly; the order check's public result will show it | 1 upload, after the local check |
+| Can the frames tell event order on our data? | **Answered: yes, weakly** (section 5a) | Done |
+| Does the order check carry over to the test? | Upload it alone, then compare its CSV with centrality's | 1 upload |
+| Are the lead's merge numbers right? | `team/merge_bounds.py` on `text_style`'s and `text_blend`'s CSVs | Local, minutes, once the CSVs are shared |
 
 ## 7. Strategy from here
 
 1. Keep centrality as the safe final until something beats it in a paired comparison.
-2. Locally, build and test an order check (section 5.1). It is the most direct route to the score
-   the task intends, and the only image method not yet tried.
-3. In parallel, spend uploads on information: interleave (lead), shortness, characters.
-4. Combine only signals that won publicly on their own, with a rule chosen before seeing the
-   combination's score, and confirm it against centrality's CSV.
-5. Leave the final Colab run for 10:30 at the latest (`team/final_colab_text.ipynb`, plus any image
-   model it needs).
+2. Verify the take-turns bound with the CSVs. If it holds, `text_blend_interleave` is the leading
+   final candidate, because even its worst case beats every uploaded rule.
+3. Upload the order check alone. If its CSV shows it picks the correct text where centrality and
+   reversed style both fail, use it to decide between the top picks, as `arbiter_v1` does with
+   SmolVLM.
+4. Spend the remaining uploads on information: shortness, characters.
+5. Commit the final rule's code, and start the final Colab run by 10:30
+   (`team/final_colab_text.ipynb`, plus SigLIP if the order check is in).
