@@ -255,6 +255,8 @@ The gain from overruling depends on how often the frames overrule each kind of p
 
 A threshold of 3 keeps most of the gain and removes the loss when the frames carry no information, so `arbiter_v1` uses it. It wasn't tuned on public results. The gain is likely overstated for the test: near-identical pairs rarely reach a margin of 3 (9% of `word_swap` and `qwen` pairs, right 79% of the time), which alone would give about +0.005.
 
+**Public evidence against this.** `smolvlm_confidence_v1`, on `feat/smolvlm-gate`, let contrast-trained SmolVLM overrule centrality when its margin was at least 4, and scored 0.5382: 49 episodes changed, 16 better, 33 worse. Centrality's public ranks imply it wins about 0.65 of pairs, so a model with no information would overrule correctly about 0.35 of the time, and it did so 0.33 of the time. So those confident decisions look uninformative on the test, not harmful in themselves, despite 0.96 locally. It's a different model and rule, but `arbiter_v1`'s expected gain should be taken as about zero unless a public result shows otherwise.
+
 A 4-epoch fine-tune was stopped during its first epoch. At about 2 s per batch on an RTX 5070 with the GPU to itself, an epoch takes about 28 minutes, so a T4 at 2 to 4 times slower couldn't reproduce 4 epochs by the deadline. Two epochs would take about 2 to 4 hours there.
 
 ### Audit of our assumptions
