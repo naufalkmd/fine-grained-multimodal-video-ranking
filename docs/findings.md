@@ -10,8 +10,10 @@ Local scores use our own validation candidates; public scores come from the lead
   video.
 - Every video model scored near chance on public, and adding one to centrality lowered the score
   even when it only broke near-ties (0.5312 with w = 4).
-- Recommended final candidate: `central_submission.zip`, unless a video signal that has never been
-  trained on our PerceptionTest data (SigLIP or SmolVLM zero-shot) beats it on public.
+- Pretrained SigLIP, used without training, didn't help either: ranked equally with centrality it
+  scored 0.4682 publicly (see "Findings from SigLIP and image evidence" in
+  [validation.md](validation.md)).
+- Recommended final candidate: `central_submission.zip`, until some video signal beats it on public.
 
 ## Public scores so far
 
@@ -32,6 +34,11 @@ in one place: a reversed verb ("buttoning" / "unbuttoning") or an added action (
 down"). Our earlier validation sets mostly use other videos' descriptions as negatives, so a model
 can pass them by matching objects. That skill is useless when all five candidates share the scene,
 which explains why models scoring about 0.8 locally sit at chance on the public set.
+
+The test candidates may be long rather than one short sentence. The team lead found that the
+organizers wrote the training positives from the frames at 42-75 words and started negatives the
+same way, so test candidates are probably about 60 words (unconfirmed; see validation.md). If so,
+the Qwen sets, with a median of 12 words, are shorter than the test.
 
 ## Centrality: a text-only cue
 
@@ -143,9 +150,9 @@ All passed `validate.py`.
 
 ## Open questions
 
-1. Whether any video signal helps on public. Models trained on our data haven't. A pretrained model
-   used zero-shot (SigLIP frame-text similarity, or SmolVLM candidate likelihood) has never seen
-   PerceptionTest, so it may transfer better. Combine it with centrality leading, and compare the
+1. Whether any video signal helps on public. Models trained on our data haven't, and neither has
+   SigLIP zero-shot at equal rank weight (0.4682). The team lead's simulation predicts a video
+   signal only helps once it scores about 0.45 or more alone on public. Compare any new attempt's
    per-episode CSV against `central_submission.zip`.
 2. Improving centrality itself. The 11% of episodes where the correct text is least central suggest
    some test negatives are edits of each other rather than of the correct text. Only public can
