@@ -1,10 +1,13 @@
-"""Build team/final_colab.ipynb from the organizers' notebook, so that their cells stay in one place.
+"""Build the final Colab notebooks from the organizers' notebook, so that their cells stay in one place.
 
-Environment, data and model cells are reused. Only the training, validation and export cells change.
+`--kind ranker` (team/final_colab.ipynb) replaces the training, validation and export cells with the
+ranker's. `--kind text` (team/final_colab_text.ipynb) keeps the organizers' baseline training,
+because package.py needs its files in every ZIP, then exports a text-only rule from it.
 
-    python -m team.make_final_notebook
+    python -m team.make_final_notebook --kind text
 """
 
+import argparse
 import json
 
 from common import ROOT
@@ -110,6 +113,58 @@ run_command([PYTHON, "-I", validator, EXPORT_DIR, LOCAL_KIT, DATA_DIR],
 """
 
 
+TEXT_INTRO = """# INTHON 2026 · Final text-only submission on Colab
+
+Produces the team's final submission on a T4. Run from the top with **Runtime → Change runtime type →
+T4 GPU**.
+
+The chosen rule reads only the candidate texts. package.py still requires the kit's encoders and
+`weights/mlp.pt` in every ZIP, so this runs the organizers' baseline training unchanged (its weights
+aren't loaded by the rule), then exports the rule set by `FINAL_RULE` in section 2:
+`"central"` (team/submission_central.py) or `"regime"` (team/submission_regime.py, which also counts
+word pairs in the training descriptions).
+
+Before starting, copy the repository to `MyDrive/starterkit`, without `cuda/`, and the data to
+`MyDrive/data/Train.zip`. `SMOKE_TEST` starts as `True` to check that everything works. **Set it to
+`False` in section 2 for the final run,** and don't submit a smoke-test ZIP. Everything is saved to
+`starterkit/colab_runs/<experiment name>/`."""
+
+TEXT_EXPORT = """KIT_EXPORT_DIR = LOCAL_ROOT / "kit_submission"
+OFFLINE = {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
+run_script("export.py", "--checkpoint", CHECKPOINT, "--output-dir", KIT_EXPORT_DIR,
+           log_name="export.log", extra_env=OFFLINE)
+if FINAL_RULE == "central":
+    rule_args = ["team.export_central", "--base-dir", KIT_EXPORT_DIR]
+elif FINAL_RULE == "regime":
+    rule_args = ["team.export_regime", "--config", CONFIG_PATH, "--kit-submission", KIT_EXPORT_DIR]
+else:
+    raise ValueError(f"Unknown FINAL_RULE: {FINAL_RULE}")
+run_command([PYTHON, "-u", "-m", *rule_args, "--output-dir", EXPORT_DIR],
+            log_name="export-rule.log", extra_env=OFFLINE)
+# Run from a separate CWD so that the exported modules are the ones actually used.
+validator = LOCAL_ROOT / "validate-export.py"
+validation_code = r\"\"\"
+import sys
+from pathlib import Path
+artifact, kit, data = map(Path, sys.argv[1:4])
+sys.path.insert(0, str(artifact))
+sys.path.insert(1, str(kit))
+import baseline_model
+assert Path(baseline_model.__file__).parent == artifact
+if (artifact / "submission_central.py").is_file():
+    import submission_central
+    assert Path(submission_central.__file__).parent == artifact
+from validate import check_direct
+check_direct(artifact, data, "cuda:0")
+\"\"\"
+validator.write_text(validation_code, encoding="utf-8")
+run_command([PYTHON, "-I", validator, EXPORT_DIR, LOCAL_KIT, DATA_DIR],
+            cwd=LOCAL_ROOT, log_name="validate.log",
+            extra_env={**OFFLINE, "HF_HOME": str(LOCAL_ROOT / "empty-validation-cache")})
+print("Exported rule:", FINAL_RULE, json.loads((EXPORT_DIR / "training_info.json").read_text())["method"])
+"""
+
+
 def replace_once(text, old, new):
     if text.count(old) != 1:
         raise ValueError(f"Expected exactly one match in the organizers' notebook: {old}")
@@ -117,6 +172,10 @@ def replace_once(text, old, new):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--kind", choices=["ranker", "text"], default="ranker")
+    args = parser.parse_args()
     notebook = json.loads((ROOT / "starterkit_colab.ipynb").read_text(encoding="utf-8"))
     cells = {cell["id"]: cell for cell in notebook["cells"]}
 
@@ -129,6 +188,9 @@ def main():
             cells[cell_id]["outputs"] = []
             cells[cell_id]["execution_count"] = None
 
+    if args.kind == "text":
+        build_text(notebook, get, put)
+        return
     put("17e8f92d", INTRO)
     configure = get("configure")
     configure = replace_once(configure, 'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train")  # Or data/Train.zip\n',
@@ -156,6 +218,25 @@ def main():
                     "for each run stays in its `source/` folder. If CUDA runs out of memory, lower the batch "
                     "sizes in cell 2.")
     output = ROOT / "team/final_colab.ipynb"
+    output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"Wrote {output}")
+
+
+def build_text(notebook, get, put):
+    put("17e8f92d", TEXT_INTRO)
+    configure = get("configure")
+    configure = replace_once(configure, 'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train")  # Or data/Train.zip\n',
+                             'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train.zip")  # Or a Train folder\n')
+    configure = replace_once(configure, "SMOKE_TEST = False\n",
+                             "SMOKE_TEST = True  # Set to False for the final run\n"
+                             'FINAL_RULE = "regime"  # "central" or "regime"\n')
+    configure = replace_once(configure, '"download_models.py"]',
+                             '"download_models.py", "team/submission_central.py", "team/export_central.py",\n'
+                             '            "team/submission_regime.py", "team/export_regime.py"]')
+    put("configure", configure)
+    put("stage-data", replace_once(get("stage-data"), '".git", "models",', '".git", "cuda", "models",'))
+    put("export-validate", TEXT_EXPORT)
+    output = ROOT / "team/final_colab_text.ipynb"
     output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"Wrote {output}")
 
