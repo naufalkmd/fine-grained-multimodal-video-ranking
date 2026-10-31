@@ -70,8 +70,12 @@ the reason.
   some batches so that it also learns the no-frame likelihood.
 - `smolvlm_check.py`: scores SmolVLM with the right and a wrong video, at prior weights 0 and 1,
   and runs action pairing. Saves the raw scores.
+- `train_smolvlm_contrast.py`: continues fine-tuning so that the video, not the wording, separates
+  one-word edits; compares each edit on the episode's frames and another episode's.
+- `time_submission.py`: times an exported submission and projects the 1,910-episode test.
 - `submission_smolvlm_gate.py`, `export_smolvlm_gate.py`: centrality decides near-identical
-  candidates and SmolVLM decides pairs that describe different scenes. Public 0.5502.
+  candidates and SmolVLM decides pairs that describe different scenes (public 0.5502); with
+  `--video-margin` it also decides pairs it scores far apart (public 0.5382).
 - `tests/`: tests for the above.
 
 Qwen candidates, built once (about 35 minutes on an RTX 5070) and shared on Drive:

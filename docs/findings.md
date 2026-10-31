@@ -16,7 +16,8 @@ Local scores use our own validation candidates; public scores come from the lead
 - A fine-tuned SmolVLM that only decides between candidates describing different scenes
   (`smolvlm_gate_v1.zip`) scored 0.5502, the same as centrality alone. The test candidates seem to
   be near-identical edits almost everywhere, where neither SmolVLM nor any earlier video model
-  separates them (see "SmolVLM likelihood and the similarity gate").
+  separates them (see "SmolVLM likelihood and the similarity gate"). Contrast training on one-word
+  edits, used only where SmolVLM was confident, scored lower still (0.5382).
 - Recommended final candidate: `central_submission.zip`, until some video signal beats it on public.
 
 ## Public scores so far
@@ -29,6 +30,7 @@ Local scores use our own validation candidates; public scores come from the lead
 | `q1_central05.zip` | Q1 + centrality, w = 0.5 (the model leads) | 0.4068 |
 | `q2_central4.zip` | Q2 + centrality, w = 4 (centrality leads, the model breaks near-ties) | 0.5312 |
 | `smolvlm_gate_v1.zip` | Centrality, with fine-tuned SmolVLM deciding pairs below 0.6 word similarity | 0.5502 |
+| `smolvlm_confidence_v1.zip` | The gate, plus contrast-trained SmolVLM deciding pairs whose scores differ by 4 or more | 0.5382 |
 
 Chance is 0.375. Centrality ranked the correct text first in 40.8% of episodes and last in 11.3%;
 `smolvlm_gate_v1` in 40.7% and 11.5%.
@@ -180,6 +182,33 @@ there is 0.58 above 0.95 similarity and 0.62 at 0.85-0.95, while centrality's pu
 distribution implies the correct text beats a given negative about 0.65 of the time. Since local
 scores have overstated public ones every time, that trade looks like a loss, and it wasn't tried.
 
+**What the test structure seems to be.** Simulated with one-word edits of the organizers'
+descriptions (300 descriptions), centrality scores 0.997 when each negative is an edit of the
+correct text (0.995 with three edits each), 0.078 for a chain of edits and 0.412 when all five
+candidates are edits of a hidden original. Public 0.5515 (first 40.8%, last 11.3%) therefore means
+most test negatives are not simple edits of the correct text; in most episodes the text alone
+doesn't single it out. Locally, short one-sentence candidates (`qwen`) have a pair below 0.6
+similarity in 77% of episodes and sentence swaps in 96%, against 0% for one-word edits of long
+descriptions, so the gate's 2 changed episodes also suggest long candidates with small edits. This
+is inferred from simulations, not measured on the test.
+
+**Contrast training (`contrast_v1`).** `team/train_smolvlm_contrast.py` continues from `ft_v1` for
+one epoch with the correct description T, a one-word edit T' (`word_swap`, table from the training
+split) and another batch episode's frames V2, asking for
+[log p(T|V) - log p(T'|V)] - [log p(T|V2) - log p(T'|V2)] > 0, so text-only preferences cancel.
+On 120 validation episodes, pairwise at w = 1 with the right / wrong video: `word_swap` (the trained
+type) 0.624 / 0.452 against `ft_v1`'s 0.580 / 0.498; held out, `qwen` 0.527 / 0.446,
+`added_action` 0.696 / 0.469, `similar_episode` 0.938 / 0.540; action pairing 0.525. Pairs whose
+scores differ by 4 or more were right 0.96 of the time (6% of `word_swap` pairs).
+
+**Confidence gate (`smolvlm_confidence_v1`).** The gate above, plus SmolVLM deciding any pair whose
+scores differ by at least 4. Locally it kept one-word edits (`word_swap` 0.988 against 0.995) and
+raised a constructed case where the negatives share one edit plus their own, so the correct text
+isn't central, from 0.387 to 0.499 (wrong video 0.397). **Public: 0.5382**, below centrality:
+49 of 573 episodes changed, 16 better and 33 worse (sign test p = 0.021), most often the correct
+text moving from 1st to 2nd (13). Even SmolVLM's confident decisions were wrong about twice as
+often as right on the test, as with every earlier video model.
+
 ## Ready to submit (on njunu17's machine, not in git)
 
 | ZIP | Contents | Public |
@@ -189,6 +218,7 @@ scores have overstated public ones every time, that trade looks like a loss, and
 | `cuda/q1_central05.zip` | Q1 + centrality, w = 0.5 | 0.4068 |
 | `cuda/q1_h_qwen50.zip` | Q1 alone | Not submitted |
 | `cuda/smolvlm_gate_v1.zip` | Centrality + fine-tuned SmolVLM gate, 773 MiB | 0.5502 |
+| `cuda/smolvlm_confidence_v1.zip` | Confidence gate with `contrast_v1`, 773 MiB | 0.5382 |
 
 All passed `validate.py`.
 
