@@ -24,7 +24,7 @@ the reason.
 | Kit file | Change | Why |
 |---|---|---|
 | `.gitignore` | Added `Data/` and `*_submission/` | Keeps the dataset and exported submissions out of git |
-| `package.py` | Added `ranker_model.py` as an optional file | Ranking models need it, and the ZIP otherwise drops files that aren't listed |
+| `package.py` | Added optional files for ranking, SigLIP, centrality and reference videos | These submissions need them, and the ZIP otherwise drops files that aren't listed |
 
 ## Files
 
@@ -55,6 +55,12 @@ the reason.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
   `make_final_notebook.py`, so edit that script rather than the notebook.
+- `submission_siglip.py`, `export_siglip.py`: ranks with SigLIP's image-text match, with no training.
+- `submission_siglip_central.py`: adds SigLIP and centrality ranks, weighted by `central_rank_weight`.
+- `submission_combined.py`, `export_combined.py`: adds a trained ranker's rank and SigLIP's rank.
+- `submission_siglip_diff.py`: SigLIP on only the words that differ between candidates. Dropped.
+- `submission_evidence.py`, `export_evidence.py`: ranks by what this video adds, using fixed reference videos.
+- `submission_shortlist.py`: centrality makes a shortlist, and image evidence orders it.
 - `tests/`: tests for the above.
 
 Qwen candidates, built once (about 35 minutes on an RTX 5070) and shared on Drive:
