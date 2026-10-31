@@ -15,6 +15,13 @@ def words(text):
     return re.findall(r"[a-z0-9']+", text.lower())
 
 
+def similarity_matrix(texts):
+    """Word-level similarity of every pair of texts; 1.0 on the diagonal."""
+    tokens = [words(text) for text in texts]
+    return [[1.0 if i == j else difflib.SequenceMatcher(a=a, b=b, autojunk=False).ratio()
+             for j, b in enumerate(tokens)] for i, a in enumerate(tokens)]
+
+
 class Submission:
     def __init__(self, artifact_dir: str, device: str):
         self.artifact_dir = artifact_dir
@@ -23,12 +30,11 @@ class Submission:
         """Each candidate's mean word-level similarity to the other candidates."""
         if not choices:
             raise ValueError("choices must not be empty.")
-        texts = [words(choice["text"]) for choice in choices]
-        if len(texts) == 1:
+        if len(choices) == 1:
             return [1.0]
-        return [statistics.fmean(
-            difflib.SequenceMatcher(a=texts[i], b=texts[j], autojunk=False).ratio()
-            for j in range(len(texts)) if j != i) for i in range(len(texts))]
+        similarity = similarity_matrix([choice["text"] for choice in choices])
+        return [statistics.fmean(row[j] for j in range(len(row)) if j != i)
+                for i, row in enumerate(similarity)]
 
     def predict(self, images, choices):
         scores = self.score(images, choices)

@@ -64,6 +64,14 @@ the reason.
 - `submission_siglip_diff.py`: SigLIP on only the words that differ between candidates. Dropped.
 - `submission_evidence.py`, `export_evidence.py`: ranks by what this video adds, using fixed reference videos.
 - `submission_shortlist.py`: centrality makes a shortlist, and image evidence orders it.
+- `smolvlm_scorer.py`: scores candidates by SmolVLM's likelihood of writing them after the frames,
+  minus a weighted no-frame likelihood. Exported with the submission.
+- `train_smolvlm.py`: fine-tunes SmolVLM on the correct descriptions only, with frames left out of
+  some batches so that it also learns the no-frame likelihood.
+- `smolvlm_check.py`: scores SmolVLM with the right and a wrong video, at prior weights 0 and 1,
+  and runs action pairing. Saves the raw scores.
+- `submission_smolvlm_gate.py`, `export_smolvlm_gate.py`: centrality decides near-identical
+  candidates and SmolVLM decides pairs that describe different scenes. Public 0.5502.
 - `tests/`: tests for the above.
 
 Qwen candidates, built once (about 35 minutes on an RTX 5070) and shared on Drive:
@@ -84,6 +92,17 @@ python -m team.train_ranker --config cuda/config.json --splits cuda/outputs/base
 Download the model first with `huggingface_hub.snapshot_download("Qwen/Qwen3-4B-Instruct-2507",
 local_dir="cuda/models/qwen3-4b-instruct-2507")`. It is used for augmentation only and is never
 part of a submission.
+
+SmolVLM gate (fine-tuning about 25 minutes on an RTX 5070; the check needs the Qwen files above):
+
+```bash
+python -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolVLM-256M-Instruct', local_dir='cuda/models/smolvlm-256m-instruct')"
+python -m team.train_smolvlm --splits cuda/outputs/baseline/splits.json --output-dir cuda/outputs/smolvlm/ft_v1
+python -m team.smolvlm_check --model-dir cuda/outputs/smolvlm/ft_v1/model --output cuda/outputs/smolvlm/check_ft_v1.json
+python -m team.export_smolvlm_gate --model-dir cuda/outputs/smolvlm/ft_v1 \
+    --kit-submission cuda/sample_submission --output-dir cuda/smolvlm_gate_v1_submission --max-frames 4
+python package.py --submission-dir cuda/smolvlm_gate_v1_submission --output cuda/smolvlm_gate_v1.zip
+```
 
 Validation candidates with the `lexical` set: `rank_eval.py` builds a candidates file the first
 time it is pointed at a path that doesn't exist, using every type in `negatives.py`. Generation

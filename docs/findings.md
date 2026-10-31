@@ -1,7 +1,7 @@
 # Findings and status (njunu17's line of work)
 
 What this line of work found, what is ready to submit, and what is still open, as of 2026-11-01
-01:30 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
+04:00 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
 Local scores use our own validation candidates; public scores come from the leaderboard.
 
 ## Summary
@@ -13,6 +13,10 @@ Local scores use our own validation candidates; public scores come from the lead
 - Pretrained SigLIP, used without training, didn't help either: ranked equally with centrality it
   scored 0.4682 publicly (see "Findings from SigLIP and image evidence" in
   [validation.md](validation.md)).
+- A fine-tuned SmolVLM that only decides between candidates describing different scenes
+  (`smolvlm_gate_v1.zip`) scored 0.5502, the same as centrality alone. The test candidates seem to
+  be near-identical edits almost everywhere, where neither SmolVLM nor any earlier video model
+  separates them (see "SmolVLM likelihood and the similarity gate").
 - Recommended final candidate: `central_submission.zip`, until some video signal beats it on public.
 
 ## Public scores so far
@@ -24,8 +28,10 @@ Local scores use our own validation candidates; public scores come from the lead
 | `central_submission.zip` | Text only: ranks candidates by centrality, no video, no training | **0.5515** |
 | `q1_central05.zip` | Q1 + centrality, w = 0.5 (the model leads) | 0.4068 |
 | `q2_central4.zip` | Q2 + centrality, w = 4 (centrality leads, the model breaks near-ties) | 0.5312 |
+| `smolvlm_gate_v1.zip` | Centrality, with fine-tuned SmolVLM deciding pairs below 0.6 word similarity | 0.5502 |
 
-Chance is 0.375. Centrality ranked the correct text first in 40.8% of episodes and last in 11.3%.
+Chance is 0.375. Centrality ranked the correct text first in 40.8% of episodes and last in 11.3%;
+`smolvlm_gate_v1` in 40.7% and 11.5%.
 
 ## What the test candidates seem to be
 
@@ -119,6 +125,55 @@ What Q2 learned on PerceptionTest frames doesn't carry over to the test benchmar
 DINOv2 frame summaries may also lack the hand-motion detail that separates "buttoning" from
 "unbuttoning".
 
+## SmolVLM likelihood and the similarity gate
+
+**Why earlier video models couldn't separate the candidates.** Changing one word of a 60-word
+description leaves its MPNet embedding almost unchanged: cosine 0.983 on average between a
+description and its `word_swap` edit (0.999 at the 90th percentile, 300 descriptions), against 0.59
+for another episode's description. The rankers compare each candidate's text with the video
+separately, so near-identical candidates look the same to them whatever negatives they train on.
+
+**SmolVLM likelihood.** `team/smolvlm_scorer.py` scores a candidate by how likely SmolVLM-256M is to
+write it after seeing the frames, minus `prior_weight` times how likely it is with no frames
+(pointwise mutual information at weight 1). It reads the text word by word, so a changed word
+changes the score. `team/train_smolvlm.py` fine-tunes it to write the organizers' descriptions from
+the frames, using only the correct descriptions (no generated negatives), with frames left out on
+20% of batches so that the same model learns the no-frame prior. Vision encoder frozen, 2 epochs,
+float16 mixed precision.
+
+Measured with `team/smolvlm_check.py` on 120 validation episodes. The SmolVLM model is trained on
+correct descriptions only, so every set is held out. Scores with the wrong video show how much
+comes from the text alone:
+
+| Set (right / wrong video) | Zero-shot, w = 1 | Fine-tuned, w = 1 | Centrality |
+|---|---|---|---:|
+| `word_swap` | 0.357 / 0.330 | 0.408 / 0.320 | 0.993 |
+| `qwen` | 0.448 / 0.401 | 0.378 / 0.328 | 1.000 |
+| `swapped_action` | 0.634 / 0.360 | 0.698 / 0.259 | 0.963 |
+| `similar_episode` | 0.796 / 0.403 | **0.894** / 0.386 | 0.405 |
+| Action pairing (chance 0.5) | 0.525 | 0.508 | - |
+
+- With w below 1 the scores rise, but the wrong-video scores rise with them: the gain is how
+  natural the text is, not the video. At w = 1 the less natural edited negatives gain, which is the
+  same failure as image evidence's 0.3370 on public.
+- Image use depends on how different two candidates are. Fine-tuned, w = 1, the correct text beats
+  a negative 0.922 of the time with the right video against 0.513 with the wrong one when their word
+  similarity is below 0.5, but 0.580 against 0.498 above 0.95. Centrality is the reverse: strong on
+  edits, chance on other scenes.
+
+**The gate.** `team/submission_smolvlm_gate.py` compares every pair of candidates once: below a word
+similarity of 0.6 the higher SmolVLM score wins, otherwise the more central candidate, and the
+ranking is by wins. SmolVLM only runs if some pair is below 0.6. Locally (150 episodes) it keeps
+centrality on edits (`word_swap` 0.995 both), recovers other scenes (`similar_episode` 0.891 against
+0.394) and a constructed case where the four negatives are edits of another episode's description
+(0.968 against 0.000), but loses a little on short candidates (`qwen` 0.957 against 0.993).
+
+**Public: 0.5502, the same as centrality (0.5515)**, with almost the same rank distribution. The
+likeliest reading, not yet checked against centrality's per-episode CSV, is that almost no test pair
+falls below 0.6, so the gate rarely ran: the test negatives are close edits, and the 11% of episodes
+where the correct text is least central aren't other-scene negatives. What's left to gain is in
+telling near-identical candidates apart, which no video model here does yet.
+
 ## Ready to submit (on njunu17's machine, not in git)
 
 | ZIP | Contents | Public |
@@ -127,6 +182,7 @@ DINOv2 frame summaries may also lack the hand-motion detail that separates "butt
 | `cuda/q2_central4.zip` | Q2 + centrality, w = 4 | 0.5312 |
 | `cuda/q1_central05.zip` | Q1 + centrality, w = 0.5 | 0.4068 |
 | `cuda/q1_h_qwen50.zip` | Q1 alone | Not submitted |
+| `cuda/smolvlm_gate_v1.zip` | Centrality + fine-tuned SmolVLM gate, 773 MiB | 0.5502 |
 
 All passed `validate.py`.
 
@@ -154,8 +210,9 @@ All passed `validate.py`.
    SigLIP zero-shot at equal rank weight (0.4682). The team lead's simulation predicts a video
    signal only helps once it scores about 0.45 or more alone on public. Compare any new attempt's
    per-episode CSV against `central_submission.zip`.
+   SmolVLM, used only between different-looking candidates, changed nothing (0.5502).
 2. Improving centrality itself. The 11% of episodes where the correct text is least central suggest
-   some test negatives are edits of each other rather than of the correct text. Only public can
-   test changes here.
+   some test negatives are edits of each other rather than of the correct text; the gate result
+   suggests they are still close edits, not other scenes. Only public can test changes here.
 3. The final model has to be produced on Colab. Centrality alone needs no training, so it only
    needs `export_central.py` and `package.py`.
