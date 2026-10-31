@@ -1,7 +1,7 @@
 # Findings and status (njunu17's line of work)
 
 What this line of work found, what is ready to submit, and what is still open, as of 2026-11-01
-04:00 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
+06:15 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
 Local scores use our own validation candidates; public scores come from the leaderboard.
 
 ## Summary
@@ -14,11 +14,27 @@ Local scores use our own validation candidates; public scores come from the lead
   scored 0.4682 publicly (see "Findings from SigLIP and image evidence" in
   [validation.md](validation.md)).
 - A fine-tuned SmolVLM that only decides between candidates describing different scenes
-  (`smolvlm_gate_v1.zip`) scored 0.5502, the same as centrality alone. The test candidates seem to
-  be near-identical edits almost everywhere, where neither SmolVLM nor any earlier video model
-  separates them (see "SmolVLM likelihood and the similarity gate"). Contrast training on one-word
-  edits, used only where SmolVLM was confident, scored lower still (0.5382).
-- Recommended final candidate: `central_submission.zip`, until some video signal beats it on public.
+  (`smolvlm_gate_v1.zip`) scored 0.5502, the same as centrality alone: it changed only 2 episodes,
+  because test candidates rarely differ that much. Contrast training on one-word edits, used only
+  where SmolVLM was confident, scored lower still (0.5382; 16 episodes better, 33 worse).
+- Recommended final candidate: `central_submission.zip`.
+
+## Lessons
+
+1. **Text encoders hide one-word differences.** A one-word edit of a 60-word description keeps its
+   MPNet embedding at cosine 0.983, so models that compare a sentence vector with the video can't
+   tell near-identical candidates apart. SmolVLM, which reads the text token by token while seeing
+   the frames, is the only permitted model without this bottleneck.
+2. **What the test candidates look like (inferred, not measured).** Long descriptions with small
+   edits: almost no pair is below 0.6 word similarity. Most negatives aren't simple edits of the
+   correct text, or centrality would score about 0.99 instead of 0.55, so in most episodes only
+   the video can pick the answer.
+3. **Local image use didn't carry over.** Every video model that used the image locally (the
+   wrong-video score dropped) lost on public, and the more a submission relied on the image, the
+   lower it scored. The wrong-video check shows a model uses the image, not that it reads the test
+   videos correctly.
+4. **Combining with centrality only pays if the video signal is right on the test.** Weighted sums,
+   near-tie breaking, a similarity gate and a confidence gate all scored at or below centrality.
 
 ## Public scores so far
 
@@ -246,9 +262,9 @@ All passed `validate.py`.
    SigLIP zero-shot at equal rank weight (0.4682). The team lead's simulation predicts a video
    signal only helps once it scores about 0.45 or more alone on public. Compare any new attempt's
    per-episode CSV against `central_submission.zip`.
-   SmolVLM, used only between different-looking candidates, changed nothing (0.5502).
-2. Improving centrality itself. The 11% of episodes where the correct text is least central suggest
-   some test negatives are edits of each other rather than of the correct text; the gate result
-   suggests they are still close edits, not other scenes. Only public can test changes here.
+   SmolVLM, used only between different-looking candidates, changed nothing (0.5502), and
+   contrast-trained SmolVLM, used where it was confident, lost (0.5382).
+2. Improving centrality itself. Simulations suggest most test negatives aren't edits of the correct
+   text, so a text rule has little left to find; only public can test changes here.
 3. The final model has to be produced on Colab. Centrality alone needs no training, so it only
    needs `export_central.py` and `package.py`.
