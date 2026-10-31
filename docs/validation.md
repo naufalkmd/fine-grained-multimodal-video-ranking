@@ -107,9 +107,17 @@ Not covered: nothing here tests single-word differences such as "buttoning" and 
 
 Record every experiment that gets a local score.
 
+Submission names used by the team:
+
+| Name | ZIP | Model |
+|---|---|---|
+| `b` | `cuda/sample_submission.zip` | Kit baseline |
+| `h-v1` | `cuda/final_rehearsal.zip` | H, frozen selection rule, 60 epochs, trained locally |
+| `temporal_word_swap_v1` | `cuda/temporal_word_swap_v1.zip` | H + `word_swap` negatives, 60 epochs, trained locally |
+
 | Date and time (KST) | Experiment | Trained on | Held out | Local: seen | Local: held out | Public |
 |---|---|---|---|---:|---:|---:|
-| 2026-10-31 15:33 | Kit baseline: mean-pooled frames, concat MLP, BCE; RTX 5070 | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721 | Not submitted. Other teams on the leaderboard have 0.3573 and 0.3497, which we only assume are this baseline. |
+| 2026-10-31 15:33 | Kit baseline: mean-pooled frames, concat MLP, BCE; RTX 5070 | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721 | **0.3469** (573 episodes, 0 errors, 57.72 s). Submitted as `b`. Other teams on the leaderboard have 0.3573 and 0.3497. |
 | 2026-10-31 15:54 | `mean_pool`: same architecture, listwise loss, generated negatives | `random`, `reorder`, `similar_episode`, `swapped_action` | `added_action` | `random` 0.922, `reorder` 0.516, `similar_episode` 0.748, `swapped_action` 0.872 | `added_action` 0.780; `mixed` 0.741 includes it. Wrong video: `reorder` 0.496 | Not submitted |
 | 2026-10-31 16:03 | `temporal`: temporal transformer, cross-attention, reverse loss | `random`, `reorder`, `similar_episode`, `swapped_action` | `added_action` | `random` 0.939, `reorder` 0.731, `similar_episode` 0.806, `swapped_action` 0.903 | `added_action` 0.813; `mixed` 0.852 includes it. Wrong video: `reorder` 0.692. Order pairing 0.54 | Not submitted |
 | 2026-10-31 16:20 | `temporal` with frames and text flipped together on half of qualifying episodes | `random`, `reorder`, `similar_episode`, `swapped_action` | `added_action` | `random` 0.947, `reorder` 0.286, `similar_episode` 0.818, `swapped_action` 0.896 | `added_action` 0.871; `mixed` 0.599 includes it. Wrong video: `reorder` 0.319. Order pairing 0.595 | Not submitted |
@@ -138,3 +146,6 @@ Record every experiment that gets a local score.
 | 2026-10-31 19:35 | G, seed 2026, 60 fixed epochs, no early stopping | same as B | `added_action`, `lexical` | `similar_episode` 0.829 | `added_action` 0.801; `lexical` 0.772. Wrong video: `added_action` 0.513. Order pairing 0.658 | Not submitted |
 | 2026-10-31 20:01 | H with seed 2028, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.811, `lexical` 0.755 | `added_action` 0.759. Wrong video: `added_action` 0.447. Order pairing 0.683 | Not submitted |
 | 2026-10-31 20:22 | G + `lexical`, seed 2026, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.826, `lexical` 0.777 | `added_action` 0.785. Wrong video: `added_action` 0.486. Order pairing 0.631 | Not submitted |
+| 2026-10-31 20:47 | Rehearsal: H with the frozen selection rule, 60 fixed epochs, trained locally. `cuda/final_rehearsal.zip` | same as H | `added_action` | `similar_episode` 0.821, `lexical` 0.788 | `added_action` 0.765. Wrong video: `added_action` 0.444. Order pairing 0.733 | **0.3586** (573 episodes, 0 errors, 62.35 s) |
+| 2026-10-31 21:18 | H with `lexical` 3, `similar_episode` 2, `random` 1, `reorder` 2, 8 negatives, 60 fixed epochs | `lexical`, `random`, `reorder`, `similar_episode` | `added_action`, `swapped_action` | `similar_episode` 0.838, `lexical` 0.790 | `added_action` 0.600; `swapped_action` 0.625. Wrong video: `added_action` 0.327. Order pairing 0.605 | Not submitted |
+| 2026-10-31 22:36 | H + `word_swap`, 60 fixed epochs, frozen rule, trained locally. `cuda/temporal_word_swap_v1.zip` | same as H + `word_swap` | `added_action` | `similar_episode` 0.804, `lexical` 0.745, `word_swap` 0.555 | `added_action` 0.839. Wrong video: `word_swap` 0.439, `added_action` 0.560. Order pairing 0.730 | **0.3968** (573 episodes, 0 errors, 64.21 s) |

@@ -137,10 +137,10 @@ def main():
                              "SMOKE_TEST = True  # Set to False for the final run\n")
     configure = replace_once(configure, "EPOCHS = 20\n",
                              'EPOCHS = 60\nMODEL = "temporal"\n'
-                             'TRAIN_NEGATIVES = "reorder,swapped_action,similar_episode,random,lexical"\n'
+                             'TRAIN_NEGATIVES = "reorder,swapped_action,similar_episode,random,lexical,word_swap"\n'
                              "REVERSE_WEIGHT = 0.1\nFLIP_PROBABILITY = 0.5\n")
     configure = replace_once(configure, '"download_models.py"]',
-                             '"download_models.py", "team/negatives.py", "team/lexical.py", "team/train_negatives.py",\n'
+                             '"download_models.py", "team/negatives.py", "team/lexical.py", "team/word_swap.py", "team/train_negatives.py",\n'
                              '            "team/train_ranker.py", "team/ranker_model.py", "team/rank_eval.py",\n'
                              '            "team/submission_ranker.py", "team/export_ranker.py"]')
     put("configure", configure)

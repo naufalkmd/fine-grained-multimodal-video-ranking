@@ -29,7 +29,8 @@ LABELS = [["open", "close"] if i % 2 else ["show", "show", "pour"] for i in rang
 IDS = [f"episode_{i}" for i in range(30)]
 
 
-@pytest.mark.parametrize("negative_type", NEGATIVE_TYPES)
+# word_swap needs a larger vocabulary, so it has its own tests in test_word_swap.py.
+@pytest.mark.parametrize("negative_type", [t for t in NEGATIVE_TYPES if t != "word_swap"])
 def test_negatives_are_reproducible_distinct_and_never_the_description(negative_type):
     generator = NegativeGenerator(DESCRIPTIONS, LABELS)
     first = generator.generate(0, negative_type, 4, random.Random(7))
@@ -99,7 +100,8 @@ def test_validation_sets_have_five_unique_candidates_and_are_fixed():
     first = build_validation_sets(IDS, DESCRIPTIONS, LABELS, seed=5)
     assert first == build_validation_sets(IDS, DESCRIPTIONS, LABELS, seed=5)
     for entry in first:
-        assert set(entry["sets"]) == {*NEGATIVE_TYPES, "mixed"}
+        # This small vocabulary has no words for word_swap to replace.
+        assert set(entry["sets"]) == {*NEGATIVE_TYPES, "mixed"} - {"word_swap"}
         for candidate in entry["sets"].values():
             assert len({choice["text"] for choice in candidate["choices"]}) == 5
 
