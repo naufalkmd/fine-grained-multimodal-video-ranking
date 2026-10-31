@@ -3,8 +3,28 @@
 How we measure experiments. This is the team's own approach, not an organizer
 requirement. The competition rules are in [brief.md](brief.md).
 
-Status: planned. The kit's `evaluate.py` still reports BCE and pair accuracy on
-random negatives, so it does not produce this score yet.
+Status: scoring is in `team/rank_eval.py` and negatives are in `team/negatives.py`.
+The kit's `evaluate.py` still reports BCE and pair accuracy on random negatives, and
+checkpoint selection in `train.py` still uses BCE.
+
+## Text-only leak check
+
+`rank_eval.py` also trains a text-only classifier on generated negatives, to see
+which ones can be spotted without the video. A score above about 0.42 is a leak, and
+a model trained on that type may learn the text cue instead of the video. The
+classifier is only a diagnostic: never use its outputs to select negatives or train.
+
+| Set | Text-only score | Cause |
+|---|---:|---|
+| `random` | 0.370 | None found |
+| `similar_episode` | 0.398 | None found |
+| `reorder` | 0.451 | Not identified; down from 0.820 after keeping the opening sentence first |
+| `mixed` | 0.487 | Contains the other leaking types |
+| `swapped_action` | 0.544 | Not identified |
+| `added_action` | 0.995 | Negatives are always longer, so picking the shortest scores 1.000 |
+
+Reordering can't produce four distinct negatives for every episode, so `reorder` covers
+622 of the 834 validation episodes.
 
 ## Method
 
@@ -56,3 +76,4 @@ Record every experiment that gets a local score.
 
 | Date and time (KST) | Experiment | Trained on | Held out | Local: seen | Local: held out | Public |
 |---|---|---|---|---:|---:|---:|
+| 2026-10-31 15:33 | Kit baseline: mean-pooled frames, concat MLP, BCE; RTX 5070 | `random` | `reorder`, `added_action`, `swapped_action`, `similar_episode` | 0.927 (`random`) | 0.552 (`mixed`); `reorder` 0.360, `added_action` 0.688, `swapped_action` 0.692, `similar_episode` 0.721 | Not submitted |
