@@ -72,6 +72,20 @@ the reason.
   and runs action pairing. Saves the raw scores.
 - `submission_smolvlm_gate.py`, `export_smolvlm_gate.py`: centrality decides near-identical
   candidates and SmolVLM decides pairs that describe different scenes. Public 0.5502.
+- `submission_text_rules.py`: ranks by how candidates relate to each other (consensus, MPNet meaning
+  or `blend`). With `merge` set to `interleave`, it takes turns with the least familiar wording.
+- `submission_style.py`: ranks by how familiar a candidate's word pairs are from the training
+  descriptions. `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
+- `export_text.py`: creates `text_blend`, `text_interleave` or `text_blend_interleave`.
+- `package_small.py`: packages `text_interleave` without the kit's encoders, which it never loads.
+- `final_text_colab.ipynb`: produces those finals, or `arbiter`, on a T4. Built from the organizers'
+  notebook by `make_text_notebook.py`, so edit that script rather than the notebook.
+- `submission_fill.py`, `export_fill.py`: SmolVLM's support from the frames on only the tokens that
+  differ between candidates, alone or with centrality.
+- `submission_unfamiliar.py`, `export_unfamiliar.py`: least expected wording under SmolVLM with no
+  frames, on the tokens that differ. Text only.
+- `submission_arbiter.py`, `export_arbiter.py`: `text_blend_interleave`, with SmolVLM putting the
+  second top pick first when the frames favour it by more than a threshold.
 - `tests/`: tests for the above.
 
 Qwen candidates, built once (about 35 minutes on an RTX 5070) and shared on Drive:
