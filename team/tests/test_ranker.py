@@ -21,6 +21,7 @@ from team.train_ranker import (
     reverse_frames,
     run_epoch,
     sample_negatives,
+    video_contrast_loss,
 )
 
 
@@ -273,3 +274,31 @@ def test_action_pairing_ignores_wording_and_rewards_video_direction(monkeypatch)
     episodes = {"e": Episode()}
     assert module.action_pairing(Predictor(5.0, 0.0), episodes, records)["score"] == 0.5
     assert module.action_pairing(Predictor(5.0, 1.0), episodes, records)["score"] == 1.0
+
+
+def test_video_contrast_is_lower_when_each_text_fits_its_own_video():
+    class Matching(torch.nn.Module):
+        def logits(self, frames, frame_mask, tokens, token_mask, candidates):
+            return (frames[:, 0] @ tokens[:candidates, 0].T) * 10
+
+    identity = torch.eye(4)
+    frames = identity.unsqueeze(1)
+    mask = torch.ones(4, 1, dtype=torch.bool)
+    tokens = identity.unsqueeze(1)
+    token_mask = torch.ones(4, 1, dtype=torch.bool)
+    rows = torch.arange(4)
+    matched = video_contrast_loss(Matching(), frames, mask, tokens, token_mask, rows, 4)
+    shuffled = video_contrast_loss(Matching(), frames, mask, tokens[[1, 2, 3, 0]], token_mask, rows, 4)
+    assert matched < 0.01 < shuffled
+
+
+def test_video_contrast_ignores_a_preference_for_text_alone():
+    class TextOnly(torch.nn.Module):
+        def logits(self, frames, frame_mask, tokens, token_mask, candidates):
+            return tokens[:candidates, 0, 0].unsqueeze(0).repeat(len(frames), 1) * 100
+
+    frames = torch.eye(3).unsqueeze(1)
+    tokens = torch.tensor([[[1.0]], [[2.0]], [[3.0]]])
+    mask = torch.ones(3, 1, dtype=torch.bool)
+    loss = video_contrast_loss(TextOnly(), frames, mask, tokens, mask, torch.arange(3), 3)
+    assert abs(loss.item() - torch.log(torch.tensor(3.0)).item()) < 1e-5

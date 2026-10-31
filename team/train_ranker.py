@@ -216,10 +216,19 @@ def qwen_candidates(record, count, flip_probability, short_pool, rng, reverse_ac
     return correct, dict(list(negatives.items())[:count]), flipped
 
 
+def video_contrast_loss(model, frames, frame_mask, tokens, token_mask, rows, limit):
+    """Given a correct text, find its video among the batch's videos. Only the video can answer this."""
+    count = min(limit, len(rows))
+    rows = rows[:count]
+    logits = model.logits(frames[:count], frame_mask[:count], tokens[rows].repeat(count, 1, 1),
+                          token_mask[rows].repeat(count, 1), count)
+    return nn.functional.cross_entropy(logits.T, torch.arange(count, device=logits.device))
+
+
 def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes, types, device,
               epoch, seed, batch_size, reverse_weight, flip_probability, count=4, mix=None,
               fill="random", record=None, qwen=None, qwen_probability=0.0,
-              qwen_reverse_actions=False):
+              qwen_reverse_actions=False, video_contrast_weight=0.0, video_contrast_limit=12):
     """Train for one epoch. `record` receives the candidates used, for the organizers' inspection."""
     model.train()
     order = list(range(len(episodes)))
@@ -275,6 +284,10 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
         logits = model.logits(frames, frame_mask, tokens, token_mask, count + 1)
         targets = torch.tensor(targets, device=device)
         loss = ranking_loss(logits, targets)
+        if video_contrast_weight > 0 and len(indices) > 1:
+            rows = torch.arange(len(indices), device=device) * (count + 1) + targets
+            loss = loss + video_contrast_weight * video_contrast_loss(
+                model, frames, frame_mask, tokens, token_mask, rows, video_contrast_limit)
         if reverse_weight > 0:
             # The correct text should fit forward frames better than reversed frames.
             rows = torch.arange(len(indices), device=device) * (count + 1) + targets
@@ -325,6 +338,8 @@ def main():
     parser.add_argument("--seed", type=int, help="Overrides the config's seed for repeat runs.")
     parser.add_argument("--flip-probability", type=float, default=0.0,
                         help="Share of episodes trained with frames and text reversed together.")
+    parser.add_argument("--video-contrast-weight", type=float, default=0.0,
+                        help="Weight of also finding each correct text's video among the batch's videos.")
     parser.add_argument("--save-negatives", action="store_true",
                         help="Save every epoch's candidates in the run's negatives/ folder.")
     parser.add_argument("--qwen-candidates", type=Path,
@@ -400,6 +415,7 @@ def main():
                 "qwen_reverse_actions": bool(qwen) and args.qwen_reverse_actions,
                 "held_out": held_out, "reverse_weight": reverse_weight,
                 "flip_probability": args.flip_probability, "save_negatives": args.save_negatives,
+                "video_contrast_weight": args.video_contrast_weight,
                 "train_episodes": len(train), "valid_episodes": len(valid),
                 "learning_rate": args.learning_rate, "batch_size": args.batch_size,
                 "seed": config["seed"], "candidate_seed": candidate_seed,
@@ -422,7 +438,7 @@ def main():
                                       train_types, device, epoch, config["seed"], args.batch_size,
                                       reverse_weight, args.flip_probability, args.k, mix, args.fill,
                                       record, qwen, args.qwen_probability if qwen else 0.0,
-                                      args.qwen_reverse_actions)
+                                      args.qwen_reverse_actions, args.video_contrast_weight)
         finally:
             if record is not None:
                 record.close()
