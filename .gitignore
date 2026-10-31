@@ -1,9 +1,20 @@
-siglip_model/
-*.safetensors
-*.pt
-*.pth
-*.zip
-*.jsonl
 __pycache__/
+.pytest_cache/
+.venv/
+.venv-*/
+.ipynb_checkpoints/
+.DS_Store
 .env
-*.token
+*.code-workspace
+
+# Data, models and generated output
+data/
+Data/
+models/
+outputs/
+colab_runs/
+sample_submission/
+*_submission/
+*.zip
+*.pt
+*.safetensors
