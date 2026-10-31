@@ -14,7 +14,8 @@ INTRO = """# INTHON 2026 · Final model on Colab
 Produces the team's final model on a T4. Run from the top with **Runtime → Change runtime type → T4 GPU**.
 
 Before starting, copy the repository to `MyDrive/starterkit`, without `cuda/`, and the data to
-`MyDrive/data/Train.zip`. Set `SMOKE_TEST = True` first to check that everything works.
+`MyDrive/data/Train.zip`. `SMOKE_TEST` starts as `True` to check that everything works. **Set it to
+`False` in section 2 for the final run,** and don't submit a smoke-test ZIP.
 
 Everything saved for inspection goes to `starterkit/colab_runs/<experiment name>/`: code, settings,
 logs, checkpoint, the negatives used in every epoch, and the ZIP.
@@ -130,6 +131,10 @@ def main():
 
     put("17e8f92d", INTRO)
     configure = get("configure")
+    configure = replace_once(configure, 'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train")  # Or data/Train.zip\n',
+                             'TRAIN_SOURCE = Path("/content/drive/MyDrive/data/Train.zip")  # Or a Train folder\n')
+    configure = replace_once(configure, "SMOKE_TEST = False\n",
+                             "SMOKE_TEST = True  # Set to False for the final run\n")
     configure = replace_once(configure, "EPOCHS = 20\n",
                              'EPOCHS = 60\nMODEL = "temporal"\n'
                              'TRAIN_NEGATIVES = "reorder,swapped_action,similar_episode,random,lexical"\n'
