@@ -188,20 +188,25 @@ def load_qwen_records(path, train_ids):
     return records
 
 
-def qwen_candidates(record, count, flip_probability, short_pool, rng):
+def qwen_candidates(record, count, flip_probability, short_pool, rng, reverse_actions=False):
     """A short positive with its single-change negatives, topped up with other short positives.
 
     With a swapped-order negative, flipping works as for full descriptions: on reversed frames the
-    swapped sentence is correct and the original wording becomes a negative.
+    swapped sentence is correct and the original wording becomes a negative. With reverse_actions,
+    the reversed-action sentence can play that role too, since playing "folds" backwards looks like
+    "unfolds". Each such text is then correct on one frame direction and wrong on the other, so
+    wording alone can't tell them apart.
     """
     correct = record["positive"]
     negatives = {text: f"qwen_{kind}" for kind, text in record["negatives"].items()}
-    swapped = record["negatives"].get("swapped_order")
-    flipped = bool(swapped) and rng.random() < flip_probability
+    kinds = ("swapped_order", "reversed_action") if reverse_actions else ("swapped_order",)
+    targets = [record["negatives"][kind] for kind in kinds if record["negatives"].get(kind)]
+    flipped = bool(targets) and rng.random() < flip_probability
     if flipped:
+        target = targets[0] if len(targets) == 1 else rng.choice(targets)
         negatives = {record["positive"]: "qwen_flipped_original",
-                     **{text: kind for text, kind in negatives.items() if text != swapped}}
-        correct = swapped
+                     **{text: kind for text, kind in negatives.items() if text != target}}
+        correct = target
     for _ in range(count * 20):
         if len(negatives) >= count:
             break
@@ -222,8 +227,8 @@ def video_contrast_loss(model, frames, frame_mask, tokens, token_mask, rows, lim
 
 def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes, types, device,
               epoch, seed, batch_size, reverse_weight, flip_probability, count=4, mix=None,
-              fill="random", record=None, qwen=None, qwen_probability=0.0, video_contrast_weight=0.0,
-              video_contrast_limit=12):
+              fill="random", record=None, qwen=None, qwen_probability=0.0,
+              qwen_reverse_actions=False, video_contrast_weight=0.0, video_contrast_limit=12):
     """Train for one epoch. `record` receives the candidates used, for the organizers' inspection."""
     model.train()
     order = list(range(len(episodes)))
@@ -242,7 +247,7 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
             qwen_record = qwen.get(episodes[i].episode_id) if qwen else None
             if qwen_record and rng.random() < qwen_probability:
                 correct, negatives, flipped = qwen_candidates(qwen_record, count, flip_probability,
-                                                              short_pool, rng)
+                                                              short_pool, rng, qwen_reverse_actions)
                 if flipped:
                     frames = frames.flip(0)
                 features.append(frames)
@@ -342,6 +347,9 @@ def main():
                              "positives with single-change negatives.")
     parser.add_argument("--qwen-probability", type=float, default=0.5,
                         help="Share of episodes with a usable record trained on it instead.")
+    parser.add_argument("--qwen-reverse-actions", action="store_true",
+                        help="When flipping a Qwen episode, the reversed-action sentence can be the "
+                             "correct text for the reversed frames, as the swapped-order one is.")
     parser.add_argument("--max-train-episodes", type=int, help="Small subset for a smoke run.")
     parser.add_argument("--report-only", action="store_true",
                         help="Skip training and rebuild report.json from the run's best.pt.")
@@ -404,6 +412,7 @@ def main():
                 "qwen_candidates": str(args.qwen_candidates) if qwen else None,
                 "qwen_probability": args.qwen_probability if qwen else 0.0,
                 "qwen_train_records": len(qwen) if qwen else 0,
+                "qwen_reverse_actions": bool(qwen) and args.qwen_reverse_actions,
                 "held_out": held_out, "reverse_weight": reverse_weight,
                 "flip_probability": args.flip_probability, "save_negatives": args.save_negatives,
                 "video_contrast_weight": args.video_contrast_weight,
@@ -429,7 +438,7 @@ def main():
                                       train_types, device, epoch, config["seed"], args.batch_size,
                                       reverse_weight, args.flip_probability, args.k, mix, args.fill,
                                       record, qwen, args.qwen_probability if qwen else 0.0,
-                                      args.video_contrast_weight)
+                                      args.qwen_reverse_actions, args.video_contrast_weight)
         finally:
             if record is not None:
                 record.close()

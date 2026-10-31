@@ -236,6 +236,46 @@ def test_submission_centrality_and_standardize():
     assert standardize([5.0, 5.0]) == [0.0, 0.0]
 
 
+def test_qwen_reverse_actions_lets_the_reversed_sentence_be_correct_on_reversed_frames():
+    from team.train_ranker import qwen_candidates
+
+    record = {**QWEN_RECORD, "negatives": {
+        "reversed_action": "A person unfolds a towel and places it down."}}
+    pool = [f"Someone does thing {i}." for i in range(10)]
+    correct, negatives, flipped = qwen_candidates(record, 4, 1.0, pool, random.Random(0))
+    assert not flipped and correct == record["positive"]
+    correct, negatives, flipped = qwen_candidates(record, 4, 1.0, pool, random.Random(0), True)
+    assert flipped and correct == record["negatives"]["reversed_action"]
+    assert negatives[record["positive"]] == "qwen_flipped_original"
+
+
+
+def test_action_pairing_ignores_wording_and_rewards_video_direction(monkeypatch):
+    from team import action_pairing as module
+
+    class Episode:
+        frames = ()
+
+    class Frame(int):
+        def close(self):
+            pass
+
+    monkeypatch.setattr(module, "load_images", lambda episode: [Frame(1), Frame(2), Frame(3)])
+
+    class Predictor:
+        def __init__(self, text_bias, video_gain):
+            self.text_bias, self.video_gain = text_bias, video_gain
+
+        def _logits(self, images, choices):
+            forward = 1.0 if images[0] < images[-1] else 0.0
+            return torch.tensor([self.text_bias + self.video_gain * forward, 0.0])
+
+    records = [{"episode_id": "e", "positive": "folds", "negatives": {"reversed_action": "unfolds"}}]
+    episodes = {"e": Episode()}
+    assert module.action_pairing(Predictor(5.0, 0.0), episodes, records)["score"] == 0.5
+    assert module.action_pairing(Predictor(5.0, 1.0), episodes, records)["score"] == 1.0
+
+
 def test_video_contrast_is_lower_when_each_text_fits_its_own_video():
     class Matching(torch.nn.Module):
         def logits(self, frames, frame_mask, tokens, token_mask, candidates):
