@@ -42,6 +42,8 @@ the reason.
   candidates; without them it draws 4 negatives of random types as before.
 - `submission_ranker.py`: exported as the submission's `submission.py`.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
+- `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
+  `make_final_notebook.py`, so edit that script rather than the notebook.
 - `tests/`: tests for the above.
 
 Validation candidates with the `lexical` set: `rank_eval.py` builds a candidates file the first

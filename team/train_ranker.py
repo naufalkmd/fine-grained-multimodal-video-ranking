@@ -1,12 +1,13 @@
 """Train a ranking model on generated negatives, using cached frames and frozen encoders.
 
-Every run selects its checkpoint with the same rule, so that runs stay comparable: the 5-candidate
-score on SELECTION_SETS, averaged with order pairing. `added_action` is left out of the rule, so a
-run holding it out of training never uses it. These scores depend on our generated negatives and
-are not leaderboard scores. See docs/validation.md.
+Every run selects its checkpoint with the same rule, so that runs stay comparable: the clean rank
+score (the 5-candidate score on SELECTION_SETS, which have no detected text leak), averaged with
+order pairing. These scores depend on our generated negatives and are not leaderboard scores. See
+docs/validation.md.
 """
 
 import argparse
+import gzip
 import json
 import random
 import statistics
@@ -29,7 +30,7 @@ from team.train_negatives import sample_negatives as sample_mixed
 from team.rank_eval import rank_score, summarize
 from torch import nn
 
-SELECTION_SETS = ("random", "reorder", "similar_episode", "swapped_action")
+SELECTION_SETS = ("lexical", "similar_episode")
 
 
 @torch.inference_mode()
@@ -91,23 +92,24 @@ def reverse_frames(features):
 
 
 def sample_negatives(generator, index, types, count, rng):
-    """Each negative's type is drawn separately; descriptions without enough options get random ones."""
+    """Text -> type. Each type is drawn separately; descriptions short of options get random ones."""
     negatives = {}
     for _ in range(count * 5):
-        for text in generator.generate(index, rng.choice(types), 1, rng):
-            negatives[text] = None
+        negative_type = rng.choice(types)
+        for text in generator.generate(index, negative_type, 1, rng):
+            negatives.setdefault(text, negative_type)
         if len(negatives) >= count:
             break
     for text in generator.generate(index, "random", count, rng):
         if len(negatives) < count:
-            negatives[text] = None
-    return list(negatives)[:count]
+            negatives.setdefault(text, "random")
+    return dict(list(negatives.items())[:count])
 
 
 def draw_negatives(generator, index, types, count, rng, mix=None, fill="random"):
-    """With a mix, the counts per type are fixed (team.train_negatives); otherwise types are drawn."""
+    """Text -> type. With a mix, the counts per type are fixed (team.train_negatives); otherwise types are drawn."""
     if mix:
-        return [text for _, text in sample_mixed(generator, index, mix, count, fill, rng)]
+        return {text: kind for kind, text in sample_mixed(generator, index, mix, count, fill, rng)}
     return sample_negatives(generator, index, types, count, rng)
 
 
@@ -178,7 +180,8 @@ def order_pairing(model, encoders, frames_by_episode, episodes, device, count=40
 
 def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes, types, device,
               epoch, seed, batch_size, reverse_weight, flip_probability, count=4, mix=None,
-              fill="random"):
+              fill="random", record=None):
+    """Train for one epoch. `record` receives the candidates used, for the organizers' inspection."""
     model.train()
     order = list(range(len(episodes)))
     random.Random(f"{seed}:order:{epoch}").shuffle(order)
@@ -198,12 +201,18 @@ def run_epoch(model, optimizer, encoders, frames_by_episode, generator, episodes
                 # Reverse frames and text together, so the reordered wording is sometimes the
                 # right answer. Only the video can then show which text order is correct.
                 frames = frames.flip(0)
-                negatives = [description, *[text for text in negatives if text != correct]][:count]
+                others = {text: kind for text, kind in negatives.items() if text != correct}
+                negatives = dict(list({description: "flipped_original", **others}.items())[:count])
+                flipped = True
             else:
                 correct = description
+                flipped = False
             features.append(frames)
             choices = [correct, *negatives]
             rng.shuffle(choices)
+            if record is not None:
+                record.write(json.dumps({"episode_id": episodes[i].episode_id, "flipped": flipped,
+                                         "correct": correct, "negatives": negatives}) + "\n")
             texts.extend(choices)
             targets.append(choices.index(correct))
         tokens, token_mask = encode_tokens(encoders, texts)
@@ -261,6 +270,8 @@ def main():
     parser.add_argument("--seed", type=int, help="Overrides the config's seed for repeat runs.")
     parser.add_argument("--flip-probability", type=float, default=0.0,
                         help="Share of episodes trained with frames and text reversed together.")
+    parser.add_argument("--save-negatives", action="store_true",
+                        help="Save every epoch's candidates in the run's negatives/ folder.")
     parser.add_argument("--max-train-episodes", type=int, help="Small subset for a smoke run.")
     parser.add_argument("--report-only", action="store_true",
                         help="Skip training and rebuild report.json from the run's best.pt.")
@@ -319,7 +330,8 @@ def main():
                 "negatives_per_episode": args.k, "mix": mix or None,
                 "fill": args.fill if mix else None,
                 "held_out": held_out, "reverse_weight": reverse_weight,
-                "flip_probability": args.flip_probability, "train_episodes": len(train), "valid_episodes": len(valid),
+                "flip_probability": args.flip_probability, "save_negatives": args.save_negatives,
+                "train_episodes": len(train), "valid_episodes": len(valid),
                 "learning_rate": args.learning_rate, "batch_size": args.batch_size,
                 "seed": config["seed"], "candidate_seed": candidate_seed,
                 "selection_sets": SELECTION_SETS, "epochs": args.epochs, "patience": args.patience,
@@ -331,13 +343,22 @@ def main():
     best, stale, history = -1.0, 0, []
     for epoch in range(0 if args.report_only else args.epochs):
         started = time.perf_counter()
-        train_metrics = run_epoch(model, optimizer, encoders, frames_by_episode, generator, train,
-                                  train_types, device, epoch, config["seed"], args.batch_size,
-                                  reverse_weight, args.flip_probability, args.k, mix, args.fill)
+        record = None
+        if args.save_negatives:
+            (args.output_dir / "negatives").mkdir(exist_ok=True)
+            record = gzip.open(args.output_dir / f"negatives/epoch_{epoch + 1:03d}.jsonl.gz", "wt",
+                               encoding="utf-8")
+        try:
+            train_metrics = run_epoch(model, optimizer, encoders, frames_by_episode, generator, train,
+                                      train_types, device, epoch, config["seed"], args.batch_size,
+                                      reverse_weight, args.flip_probability, args.k, mix, args.fill,
+                                      record)
+        finally:
+            if record is not None:
+                record.close()
         selected = {name: score_sets(model, encoders, frames_by_episode, candidates, name, device)
                     for name in SELECTION_SETS}
         pairing = order_pairing(model, encoders, frames_by_episode, valid, device)
-        # Pairing counts equally with the sets together: text cues can inflate those sets.
         selection = (statistics.fmean(item["score"] for item in selected.values()) + pairing["score"]) / 2
         metrics = {"epoch": epoch + 1, "train": train_metrics, "selection_sets": selected,
                    "order_pairing": pairing,
