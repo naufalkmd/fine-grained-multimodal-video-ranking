@@ -50,7 +50,8 @@ the reason.
   it for text-only cues.
 - `submission_central.py`, `export_central.py`: a text-only submission that ranks candidates by
   how similar each is to the others, used to probe how the test negatives were made.
-- `submission_ranker.py`: exported as the submission's `submission.py`.
+- `submission_ranker.py`: exported as the submission's `submission.py`. With `central_weight` in
+  `inference_config.json` (set by `export_ranker.py --central-weight`), it adds candidate centrality.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
   `make_final_notebook.py`, so edit that script rather than the notebook.

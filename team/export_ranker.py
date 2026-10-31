@@ -9,7 +9,7 @@ from baseline_model import FrozenEncoders
 from common import ROOT, save_json
 
 
-def export(checkpoint_path, output_dir):
+def export(checkpoint_path, output_dir, central_weight=0.0):
     checkpoint_path, output_dir = Path(checkpoint_path), Path(output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Use an empty submission directory: {output_dir}")
@@ -33,10 +33,11 @@ def export(checkpoint_path, output_dir):
         "image_batch_size": config["image_batch_size"],
         "text_batch_size": config["text_batch_size"],
         "max_text_length": config["max_text_length"], "cpu_threads": config["cpu_threads"],
+        **({"central_weight": central_weight} if central_weight > 0 else {}),
     })
     save_json(output_dir / "training_info.json", {
         **checkpoint["run_info"], "epoch": checkpoint["epoch"],
-        "encoder_storage_dtype": "float16",
+        "encoder_storage_dtype": "float16", "central_weight": central_weight,
     })
     print(f"Exported self-contained submission: {output_dir.resolve()}", flush=True)
     return output_dir
@@ -46,8 +47,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--central-weight", type=float, default=0.0,
+                        help="Add this times each candidate's standardized centrality to its "
+                             "standardized logit; 0 ranks by the model alone.")
     args = parser.parse_args()
-    export(args.checkpoint, args.output_dir)
+    export(args.checkpoint, args.output_dir, args.central_weight)
 
 
 if __name__ == "__main__":
