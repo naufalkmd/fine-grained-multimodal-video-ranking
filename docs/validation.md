@@ -90,12 +90,14 @@ Each step adds one change to the step above it, except G and H, which each chang
 | G | F without cross-attention | 60 | 0.829 | 0.772 | 0.800 | 0.658 |
 | H | F + `lexical` negatives | 50 | 0.819 | 0.762 | 0.791 | 0.728 |
 | H, seed 2027 | Repeat of H | 60 | 0.815 | 0.769 | 0.792 | 0.690 |
+| H, seed 2028 | Repeat of H | 60 | 0.811 | 0.755 | 0.783 | 0.683 |
+| G + `lexical` | G trained on `lexical` too | 60 | 0.826 | 0.777 | 0.802 | 0.631 |
 
 What this shows so far:
 
 - Hard negatives alone lower the clean score (A to B), and mostly teach text cues.
 - Flipping gives the largest order gain, and removes most of the `reorder` text cue.
-- With a fair 60-epoch run, G matches F's order signal without cross-attention, so cross-attention may not be needed.
+- Cross-attention raises the order signal: H averages 0.700 order pairing over three seeds, against 0.631 for G + `lexical` (one seed). It costs about 0.013 in clean rank score. `lexical` barely changes G.
 - With flipping, order pairing stays near 0.5 until about epoch 25. Patience 8 can end a run before that, so don't use it with flipping. C, D and E also stopped early, so they may be understated.
 - Baseline to A also changes the learning rate, batch size and number of negatives, so that gain can't be credited to the ranking loss alone.
 
@@ -124,3 +126,5 @@ Record every experiment that gets a local score.
 | 2026-10-31 18:50 | H with seed 2027. Early stopping ended it at epoch 15, before order pairing starts rising (around epoch 25 in F and H), so it isn't a fair repeat. G (16 epochs) was cut off the same way | same as H | `added_action` | `random` 0.925, `reorder` 0.273, `similar_episode` 0.805, `swapped_action` 0.849, `lexical` 0.757 | `added_action` 0.832; `mixed` 0.582. Wrong video: `reorder` 0.299. Order pairing 0.545 | Not submitted |
 | 2026-10-31 19:15 | H with seed 2027, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.815, `lexical` 0.769 | `added_action` 0.812. Wrong video: `added_action` 0.498. Order pairing 0.690 | Not submitted |
 | 2026-10-31 19:35 | G, seed 2026, 60 fixed epochs, no early stopping | same as B | `added_action`, `lexical` | `similar_episode` 0.829 | `added_action` 0.801; `lexical` 0.772. Wrong video: `added_action` 0.513. Order pairing 0.658 | Not submitted |
+| 2026-10-31 20:01 | H with seed 2028, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.811, `lexical` 0.755 | `added_action` 0.759. Wrong video: `added_action` 0.447. Order pairing 0.683 | Not submitted |
+| 2026-10-31 20:22 | G + `lexical`, seed 2026, 60 fixed epochs, no early stopping | same as H | `added_action` | `similar_episode` 0.826, `lexical` 0.777 | `added_action` 0.785. Wrong video: `added_action` 0.486. Order pairing 0.631 | Not submitted |
