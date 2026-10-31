@@ -168,11 +168,17 @@ centrality on edits (`word_swap` 0.995 both), recovers other scenes (`similar_ep
 0.394) and a constructed case where the four negatives are edits of another episode's description
 (0.968 against 0.000), but loses a little on short candidates (`qwen` 0.957 against 0.993).
 
-**Public: 0.5502, the same as centrality (0.5515)**, with almost the same rank distribution. The
-likeliest reading, not yet checked against centrality's per-episode CSV, is that almost no test pair
-falls below 0.6, so the gate rarely ran: the test negatives are close edits, and the 11% of episodes
-where the correct text is least central aren't other-scene negatives. What's left to gain is in
-telling near-identical candidates apart, which no video model here does yet.
+**Public: 0.5502, against centrality's 0.5515.** Compared episode by episode with centrality's
+public CSV, only 2 of 573 episodes changed, both for the worse (episode 407 from 1st to 2nd, 425
+from 3rd to 5th). So almost no test pair falls below 0.6 word similarity: the test negatives are
+close edits, and the 11% of episodes where the correct text is least central aren't other-scene
+negatives. What's left to gain is in telling near-identical candidates apart, which no video model
+here does yet.
+
+Raising the threshold would hand those near-identical pairs to SmolVLM. Its local pairwise accuracy
+there is 0.58 above 0.95 similarity and 0.62 at 0.85-0.95, while centrality's public rank
+distribution implies the correct text beats a given negative about 0.65 of the time. Since local
+scores have overstated public ones every time, that trade looks like a loss, and it wasn't tried.
 
 ## Ready to submit (on njunu17's machine, not in git)
 
