@@ -43,11 +43,14 @@ the reason.
   candidates; without them it draws 4 negatives of random types as before.
   With `--qwen-candidates` it also trains on the short positives and single-change negatives
   from `qwen_negatives.py`, on the share of episodes set by `--qwen-probability`.
+  `--qwen-reverse-actions` also lets the reversed-action sentence be correct on reversed frames.
 - `qwen_negatives.py`: asks a local Qwen3-4B-Instruct (float16, fits a T4) to rewrite each
   description as one short sentence and make four single-change negatives. Only code rules filter
   the output. The JSONL keeps the raw output and checks for inspection. Data goes on Drive, not git.
 - `qwen_candidates.py`: adds the test-like `qwen` set to a validation candidates file and checks
   it for text-only cues.
+- `action_pairing.py`: checks whether reversing the frames flips a submission's choice between a
+  short positive and its reversed-action sentence. Wording cancels out, so chance is 0.5.
 - `submission_central.py`, `export_central.py`: a text-only submission that ranks candidates by
   how similar each is to the others, used to probe how the test negatives were made.
 - `submission_ranker.py`: exported as the submission's `submission.py`. With `central_weight` in

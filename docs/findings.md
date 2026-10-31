@@ -1,8 +1,17 @@
 # Findings and status (njunu17's line of work)
 
 What this line of work found, what is ready to submit, and what is still open, as of 2026-11-01
-00:30 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
+01:30 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
 Local scores use our own validation candidates; public scores come from the leaderboard.
+
+## Summary
+
+- **Best public score so far: centrality alone, 0.5515.** It is text only and never looks at the
+  video.
+- Every video model scored near chance on public, and adding one to centrality lowered the score
+  even when it only broke near-ties (0.5312 with w = 4).
+- Recommended final candidate: `central_submission.zip`, unless a video signal that has never been
+  trained on our PerceptionTest data (SigLIP or SmolVLM zero-shot) beats it on public.
 
 ## Public scores so far
 
@@ -11,9 +20,10 @@ Local scores use our own validation candidates; public scores come from the lead
 | `final_rehearsal.zip` | H: temporal, cross-attention, flipping 0.5, 60 epochs | 0.3586 |
 | `temporal_word_swap_v1.zip` | H + `word_swap` | 0.3968 |
 | `central_submission.zip` | Text only: ranks candidates by centrality, no video, no training | **0.5515** |
+| `q1_central05.zip` | Q1 + centrality, w = 0.5 (the model leads) | 0.4068 |
+| `q2_central4.zip` | Q2 + centrality, w = 4 (centrality leads, the model breaks near-ties) | 0.5312 |
 
-Chance is 0.375. In the first 100 rows of the centrality submission's per-episode results, the
-correct text was ranked first in 39% of episodes and last in 14%.
+Chance is 0.375. Centrality ranked the correct text first in 40.8% of episodes and last in 11.3%.
 
 ## What the test candidates seem to be
 
@@ -37,8 +47,8 @@ never looks at the video.
 | `similar_episode`, `random` | Other videos' descriptions | 0.37-0.39 |
 
 Public came out at 0.5515, far above the video models but well below 0.99. So many test
-negatives are edits of the correct text, but not all: in 14% of episodes the correct text was the
-least central candidate. Local sets overstate centrality, so its weight has to be set on public.
+negatives are edits of the correct text, but not all: in 11% of episodes the correct text was the
+least central candidate. Local sets overstate centrality.
 
 ## Test-like validation set built with Qwen
 
@@ -47,56 +57,71 @@ one short sentence and make four single-change negatives: reversed action, added
 order and changed detail. Only code rules filter the output; the prompt has no example sentences.
 `team/qwen_candidates.py` turns the validation split into the `qwen` set (323 complete items).
 
-Video-only models score on it about what they score on public, which makes it a useful proxy for
-them:
+Video-only models trained without Qwen data score on it about what they score on public (T2 0.379,
+H + `word_swap` 0.390 against public 0.3968). It overstates models trained on Qwen data, because
+they can pick up Qwen's wording, and it overstates centrality (0.997 locally against 0.5515).
 
-| Model | `qwen` set | Public |
-|---|---:|---:|
-| T2 (no Qwen data) | 0.379 | - |
-| H + `word_swap` | 0.390 | 0.3968 |
+## Measuring whether a model reads the video
 
-It doesn't match for centrality (0.997 locally against 0.5515 publicly), as explained above.
+`team/action_pairing.py` checks whether reversing the frames flips a model's choice between a short
+positive and its reversed-action sentence ("folds" / "unfolds"). Wording alone cancels out, so
+chance is exactly 0.5 and only reading the action's direction from the video can raise it. It is a
+better local check of video use than the `qwen` set, which text cues inflate.
 
-## Training on Qwen data (Q1)
+| Model | Action pairing (n = 566) |
+|---|---:|
+| H + `word_swap` | 0.530 |
+| Q1 | 0.544 |
+| Q2 | **0.640** |
 
-H settings, plus Qwen's short positive and single-change negatives on half of the training
+## Training on Qwen data (Q1, Q2)
+
+Q1: H settings, plus Qwen's short positive and single-change negatives on half of the training
 episodes (`--qwen-candidates`, `--qwen-probability 0.5`). Flipping uses the swapped-order sentence.
 
-| | H + `word_swap` | Q1 |
-|---|---:|---:|
-| `qwen` set | 0.390 | **0.650** |
-| `qwen` set with the wrong video | - | 0.500 |
-| Clean score (`similar_episode`, `lexical`) | 0.775 | 0.790 |
-| Order pairing | 0.730 | 0.639 |
-| `added_action` (held out) | 0.839 | 0.799 |
+Q2: Q1 plus `--qwen-reverse-actions`. On reversed frames the reversed-action sentence becomes the
+correct text and the positive a negative, because playing "folds" backwards looks like "unfolds".
+Each such sentence is then right on one frame direction and wrong on the other, so its wording
+can't give it away.
 
-Part of the gain is text cues (0.500 with the wrong video), and about 0.15 needs the video. Order
-pairing dropped from H's 0.733. The best epoch was the last of 60, so it may still be rising.
-
-## Model plus centrality
-
-`team/submission_ranker.py` now takes `central_weight` from `inference_config.json`: each candidate
-scores its standardized logit plus `central_weight` times its standardized centrality. With 0 it
-behaves exactly as before. `team/export_ranker.py --central-weight` sets it. Scores below come from
-the exported folder itself:
-
-| Validation set | Q1 alone | Q1 + centrality, w = 0.5 | Centrality alone |
+| | H + `word_swap` | Q1 | Q2 |
 |---|---:|---:|---:|
-| `qwen` | 0.650 | 0.873 | 0.997 |
-| `similar_episode` | 0.819 | 0.774 | 0.388 |
-| `lexical` | 0.760 | 0.775 | 0.550 |
-| `added_action` | 0.800 | 0.949 | 1.000 |
+| `qwen` set | 0.390 | 0.650 | 0.622 |
+| `qwen` set with the wrong video | - | 0.500 | 0.456 |
+| Action pairing | 0.530 | 0.544 | **0.640** |
+| Clean score (`similar_episode`, `lexical`) | 0.775 | 0.790 | 0.800 |
+| Order pairing | 0.730 | 0.639 | 0.630 |
 
-w = 0.5 rather than 1 because local sets overstate centrality. Q1 combines better than H +
-`word_swap` at every weight tried (0.5, 1, 2, 4).
+Q2 relies less on wording and more on the video than Q1 locally. Both still peaked at the last of
+60 epochs.
+
+## Model plus centrality, and why it failed on public
+
+`team/submission_ranker.py` takes `central_weight` from `inference_config.json`: each candidate
+scores its standardized logit plus `central_weight` times its standardized centrality. With 0 it
+behaves exactly as before. `team/export_ranker.py --central-weight` sets it.
+
+- w = 0.5 with Q1 (0.4068): the model led, and its near-chance public accuracy overrode
+  centrality's correct choices.
+- w = 4 with Q2 (0.5312): against centrality alone, 118 of 573 episodes changed, 45 for the better
+  and 73 for the worse (sign test p = 0.013). The largest loss was the correct text moving from
+  1st to 2nd (31 episodes, against 14 moving from 2nd to 1st). Even on near-ties, the model chose
+  the wrong candidate about twice as often as the right one.
+
+What Q2 learned on PerceptionTest frames doesn't carry over to the test benchmark's videos. Frozen
+DINOv2 frame summaries may also lack the hand-motion detail that separates "buttoning" from
+"unbuttoning".
 
 ## Ready to submit (on njunu17's machine, not in git)
 
-| ZIP | Contents | Validated |
-|---|---|---|
-| `cuda/q1_central05.zip` | Q1 + centrality, w = 0.5 | `validate.py` passed |
-| `cuda/q1_h_qwen50.zip` | Q1 alone | `validate.py` passed |
-| `cuda/central_submission.zip` | Centrality alone (submitted) | `validate.py` passed |
+| ZIP | Contents | Public |
+|---|---|---:|
+| `cuda/central_submission.zip` | Centrality alone | 0.5515 |
+| `cuda/q2_central4.zip` | Q2 + centrality, w = 4 | 0.5312 |
+| `cuda/q1_central05.zip` | Q1 + centrality, w = 0.5 | 0.4068 |
+| `cuda/q1_h_qwen50.zip` | Q1 alone | Not submitted |
+
+All passed `validate.py`.
 
 ## Qwen data and T4 reproducibility
 
@@ -118,11 +143,12 @@ w = 0.5 rather than 1 because local sets overstate centrality. Q1 combines bette
 
 ## Open questions
 
-1. What weight to give centrality. Only public can settle it; w = 0.5 and w = 1 are the obvious
-   pair to compare.
-2. Whether Q1's gain holds on public. Submitting `q1_central05.zip` tests the combination; Q1
-   alone would isolate the Qwen data.
-3. The final model has to be produced on Colab, so Q1's training (with the Drive data) needs to go
-   into `final_colab.ipynb` if it is chosen.
-4. SigLIP is unused. Test sentences are short, so its 64-token limit no longer gets in the way; a
-   zero-shot check on the `qwen` set would show whether it is worth adding.
+1. Whether any video signal helps on public. Models trained on our data haven't. A pretrained model
+   used zero-shot (SigLIP frame-text similarity, or SmolVLM candidate likelihood) has never seen
+   PerceptionTest, so it may transfer better. Combine it with centrality leading, and compare the
+   per-episode CSV against `central_submission.zip`.
+2. Improving centrality itself. The 11% of episodes where the correct text is least central suggest
+   some test negatives are edits of each other rather than of the correct text. Only public can
+   test changes here.
+3. The final model has to be produced on Colab. Centrality alone needs no training, so it only
+   needs `export_central.py` and `package.py`.
