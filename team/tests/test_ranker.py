@@ -219,3 +219,17 @@ def test_qwen_records_come_only_from_the_training_split(tmp_path):
             {**QWEN_RECORD, "episode_id": "train_empty", "negatives": {}}]
     path.write_text("\n".join(json.dumps(row) for row in rows), encoding="utf-8")
     assert set(load_qwen_records(path, {"train_ok", "train_empty"})) == {"train_ok"}
+
+
+def test_submission_centrality_and_standardize():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # submission.py imports ranker_model
+    from team.submission_ranker import centrality, standardize
+
+    texts = ["A man is buttoning his shirt.", "A man is unbuttoning his shirt.",
+             "A man is buttoning his shirt and then sits down.", "A dog runs in a park."]
+    scores = centrality(texts)
+    assert max(range(4), key=lambda i: scores[i]) == 0
+    assert min(range(4), key=lambda i: scores[i]) == 3
+    values = standardize([1.0, 2.0, 3.0])
+    assert abs(sum(values)) < 1e-9 and values[0] < values[1] < values[2]
+    assert standardize([5.0, 5.0]) == [0.0, 0.0]
