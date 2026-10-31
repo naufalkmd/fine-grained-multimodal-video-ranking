@@ -92,6 +92,10 @@ another package.
 | accelerate | `1.15.0` |
 | bitsandbytes | `0.50.2` |
 
+`sentencepiece` isn't in this list, and SigLIP's usual tokenizer needs it. Load
+SigLIP's `tokenizer.json` with `PreTrainedTokenizerFast` instead. Its text input is
+limited to 64 tokens, which most full descriptions exceed, so encode sentences.
+
 ## Inference rules
 
 - Each prediction may use only that episode's input and artifacts finalized
