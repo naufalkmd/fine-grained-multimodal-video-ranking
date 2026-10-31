@@ -93,7 +93,10 @@ Download the model first with `huggingface_hub.snapshot_download("Qwen/Qwen3-4B-
 local_dir="cuda/models/qwen3-4b-instruct-2507")`. It is used for augmentation only and is never
 part of a submission.
 
-SmolVLM gate (fine-tuning about 25 minutes on an RTX 5070; the check needs the Qwen files above):
+SmolVLM gate (fine-tuning about 25 minutes on an RTX 5070; the check needs the Qwen files above).
+The fine-tuned model is on the team Drive next to the Qwen data, as the folder `ft_v1` (494 MB,
+float16, with `training_info.json`); ask njunu17 for the link. Put it at
+`cuda/outputs/smolvlm/ft_v1/` to skip the training step below.
 
 ```bash
 python -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolVLM-256M-Instruct', local_dir='cuda/models/smolvlm-256m-instruct')"
