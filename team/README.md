@@ -44,6 +44,15 @@ the reason.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `tests/`: tests for the above.
 
+Validation candidates with the `lexical` set: `rank_eval.py` builds a candidates file the first
+time it is pointed at a path that doesn't exist, using every type in `negatives.py`. Generation
+is fixed by the seed, so every machine gets the same file. Build it once without a submission:
+
+```bash
+python -m team.rank_eval --config cuda/config.json --run-dir cuda/outputs/baseline \
+    --trained-on random --candidates cuda/outputs/validation/candidates_lexical_csls.json
+```
+
 ```bash
 python -m pytest tests team/tests
 python -m team.rank_eval --config cuda/config.json --run-dir cuda/outputs/baseline \

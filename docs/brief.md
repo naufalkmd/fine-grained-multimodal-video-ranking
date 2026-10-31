@@ -110,6 +110,7 @@ another package.
   VRAM than that.
 - External AI services such as Claude or Codex must not generate or augment
   data. Coding agents may write the augmentation code.
+- Plagiarizing other people's code is prohibited.
 - Hand-crafted descriptions are not permitted, including manually writing or
   curating them as final training artifacts. All final artifacts must be
   reproducible from code.
