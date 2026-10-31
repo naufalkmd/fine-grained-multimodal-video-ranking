@@ -1,0 +1,41 @@
+{
+  "attention_implementation": "eager",
+  "cpu_threads": 4,
+  "encoder_path": "models/siglip",
+  "encoder_storage_dtype": "float16",
+  "ensemble": "arithmetic_mean_of_three_final_scores",
+  "heads": [
+    {
+      "bytes": 539235,
+      "epoch": 4,
+      "path": "weights/seed2026.pt",
+      "seed": 2026,
+      "sha256": "9cd4f843bd3ab6b2c6213c728d5a4aa30e9a3772b429a00ad7f07a541384cabc"
+    },
+    {
+      "bytes": 539235,
+      "epoch": 3,
+      "path": "weights/seed2027.pt",
+      "seed": 2027,
+      "sha256": "8e598227823514b7b2337c73f8781b79723ab4227e40d7dee38653b2c88c1e14"
+    },
+    {
+      "bytes": 539235,
+      "epoch": 4,
+      "path": "weights/seed2028.pt",
+      "seed": 2028,
+      "sha256": "39e83c6236b4fcdd19d6f886e0d0ccdd6f50319134b9566c4ae10e2f2d61656d"
+    }
+  ],
+  "image_batch_size": 8,
+  "model_config": {
+    "attention_temperature": 0.07,
+    "dropout": 0.1,
+    "feature_dim": 768,
+    "hidden_dim": 64,
+    "residual_limit": 0.1
+  },
+  "model_id": "google/siglip-base-patch16-224",
+  "model_revision": "7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed",
+  "text_batch_size": 16
+}

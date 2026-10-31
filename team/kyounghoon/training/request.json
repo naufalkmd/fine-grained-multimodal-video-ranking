@@ -1,0 +1,99 @@
+{
+  "version": "siglip-train-minimal-e0-v1",
+  "seeds": [
+    2026,
+    2027,
+    2028
+  ],
+  "smoke": false,
+  "train_control": false,
+  "source_run_hash": "c29a3e8b00976e3f9d76cb3f0547109513749965dd0693ef762a8c5a6547cf24",
+  "split_hash": "969f02c909d3d677d3b2e29d3ebe00d8210377b6d9ddba87973cc96698a42b8d",
+  "train_ids_hash": "4726b4a22c0e5b846b50831145190c88cfab43ee52a6e2ec95de082da0744b86",
+  "random_validation_hash": "cc141063a50a9140bfac53f60b9602dfb5914317384318dfa140be4c7b293a3b",
+  "team_validation_hash": "0e101da463036bec7e1b99bc9d16751aa42c495cd7f4bd5eca2a8117ac763e7f",
+  "minimal_validation_hash": "0de4aec95b9f99ee2545c7827d391598035f9395b474e81f3256d98e7b2262d6",
+  "training_augmentation": "460d79f77f0d7e1ac9841ab1d094e0b5106adab2ec9148182f9998e81f6fdaa9",
+  "model": {
+    "feature_dim": 768,
+    "hidden_dim": 64,
+    "attention_temperature": 0.07,
+    "residual_limit": 0.1,
+    "dropout": 0.1
+  },
+  "epochs": 30,
+  "min_epochs": 15,
+  "patience": 10,
+  "learning_rate": 0.0003,
+  "batch_size": 32,
+  "loss_temperature": 0.07,
+  "text_batch_size": 16,
+  "device": "cuda",
+  "sources": {
+    "baseline_model.py": "613f72959d492e292d3f6fd28ff4e198e21039ea691cafdff1209f4627279389",
+    "common.py": "71fd0b64ce052d21bb53d748d96c7d483af28a7a08dbd92182adbf9f21d1d362",
+    "comparison_protocol.py": "ff675ab96580c03c1626566beb071e72c2fdf4af1a6eb26c6509f5612e51952a",
+    "data_contract.py": "2427f7bd9909b937d991752cd48c927d0681aebd4963b7df44113deb5b853b72",
+    "dataset.py": "0b6057bc01bce70747e28de3745210127d424b933c1d96b1b570732468abc71a",
+    "download_train.py": "b45803b4514fc2062296a85aff6391e1954ff80c92d311d0766cba50ed6ae15c",
+    "experiment_io.py": "8455ec7d76e2245f9c767f02b4b4f15ced45c4e36a9c6807e9ea7167f8470a16",
+    "factorial_data.py": "3dc205404ec473147a251141160e29b99d37629ab4aab2a69f810eaf0202e023",
+    "factorial_delivery.py": "b24b89baff21f1ba4136624dfb4d9df3ccd7888a05b8484e09e82862c321a14d",
+    "factorial_models.py": "e303ac3102c61a39256e58db04ce7e0984b4c0ab340b615ce6046a6ec6f37306",
+    "hard_negative_data.py": "25092c1480742c7307e5f28c31e30925c7b0f8190146f7e465c1f98cac49ec3f",
+    "minimal_training_data.py": "b4a31a930c9741a1d6e1e24bcfdba7d6ca82328ad632504864874d3ad4c0f5c9",
+    "prepare_features.py": "9eba29c74cb5f786e43c9aec6be27ad3205ef6af5c4b38fe1e204915f9e55178",
+    "prepare_fresh_eval.py": "f00a7cf7f7a5ed9f9a7ef15b09bd7ac3e05f34db375497ec986641a699cd5927",
+    "prepare_team_validation.py": "e859ddd1e065f0cc10ca993c3605047d60b0939da95a0bdd0f02bcdf34940617",
+    "qwen_generate_candidates.py": "1019f3e8b60cc1e8544923fa2ba04f1853652c55a8ecd021dc722bdc6f7aeec8",
+    "review_candidates.py": "b7bf745f1cf3cd8b9c31ba57bd87dad7d2a71ff40a86138876db79a3c831bf53",
+    "run_comparison.py": "58158d19ec306f8ee0e69b53df7091e49b16d804c36078109ec2f5643e1bddd6",
+    "run_factorial_comparison.py": "8754375d5d19ef6a9d1b271231fb6b5bd495881fd8b1e4ec6ff1efd545b0507b",
+    "run_hard_evaluation.py": "4c68ca110322f1e7ddc6ee5f6a1f1a1cee551f43090e5b65e6259143c7a89276",
+    "run_minimal_training.py": "605784ceb7eb65ea58e6983d9c7aeca6f88bd100ddf54e62384149369b04f75f",
+    "run_sentence_comparison.py": "22b0ef3809bc8310a91ef4188ff87ae78530f4c8a01196a253b9a4447d135b71",
+    "sentence_features.py": "80badb548234c6c1dd9b28478825d73b6cd0b247cf19430e83bb0260667493ad",
+    "sentence_models.py": "6a9e4d9311dee5b64779cd6ad0e6cfc79dfec7d5761808ae9eda16ae3c8a297d",
+    "siglip_model.py": "5011c6fb39e2f24d24e022932bfcd853def27eb3920cf68f8a751d18dd61fc61",
+    "team/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "team/lexical.py": "081cd1b2f588309f0c9054c7fedc3f46a1c0a44c83089c44feea76f5a6048f8f",
+    "team/negatives.py": "130dcd283eaef9b2e29fc8141e65aecc5f8d65b14439d138ccaf89fe57a66b74",
+    "team/train_negatives.py": "d5883004bf945e2ba9a12f398f7920674b68773ba75367585c83e96a260a96d0",
+    "team_validation.py": "3bcd3429c6d89688b2bea3e5798b072a79ba80e55a92e430e770e6bbd90dfedf",
+    "temporal_models.py": "65bd5b5648d7508d689ea0670a83543af567f5cd53684d69dfadd860f66fbba3",
+    "training_features.py": "9a858eac013063cf47200ecf131307c840de5f4b04cf484d569337646a598159",
+    "training_schedules.py": "4aeb0ced8bf5cb65cac5bd9d82a04b95e7a3c52a5d8d30f2107a5b17376d4690"
+  },
+  "original_feature_fingerprint": "a6765628532d31b73a23402a8eb11f58309882b3dde441de2d8fc33ecbffa24c",
+  "generated_features": "0a80b1cc4ac575539c46cda68e2426ce66d8014c1c2fdbcf762470efeef71b3c",
+  "selection": "max team reward; then max random reward; then min team CE; then earlier epoch (epoch 0 eligible)",
+  "new_hard_validation_selection": false,
+  "base_schedule": "566d7a2ff05fd48181d022f035d7fcf13e63788e468ffc4e27e9edb313df90fa",
+  "minimal_schedule": "e0843386f568b2f0af493311299ceb076a13eb51c159a66951c758434404f29d",
+  "initialization": "identical seed; zero residual; trained from scratch",
+  "training": "official positive indices and code-produced weak negatives; no teacher targets",
+  "weights": [
+    {
+      "seed": 2026,
+      "record": {
+        "bytes": 539363,
+        "sha256": "9b5d0d4b3ecde6a647a931741e75b604cb0a81529c7cc4b8b8b8fc62684228cb"
+      }
+    },
+    {
+      "seed": 2027,
+      "record": {
+        "bytes": 539363,
+        "sha256": "e08848e76c5e9e44a91294e46c7576f1154ef0860a8790853bde1092c35201b4"
+      }
+    },
+    {
+      "seed": 2028,
+      "record": {
+        "bytes": 539363,
+        "sha256": "a5746611339a8a8b7db8db5244359bbd215d23585e606a7010f991a5c17e45e1"
+      }
+    }
+  ],
+  "semantic_warning": "Edits remain rule assumptions; final-only development score is not a leaderboard estimate."
+}

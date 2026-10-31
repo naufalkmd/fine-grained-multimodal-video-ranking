@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "model_id": "google/siglip-base-patch16-224",
+  "model_revision": "7fd15f0689c79d79e38b1c2e2e2370a7bf2761ed",
+  "request": {
+    "sha256": "8da8a64d875a264f653d68aa1f135f14652874743e6dc5c32a4c1d67d6ebc242",
+    "bytes": 5605
+  },
+  "comparison": {
+    "sha256": "ec2f59ac30285d0fa1532876a8a08d01ed9405b0bdf654389c233fc0d6a33d4c",
+    "bytes": 10964
+  },
+  "run_hash": "25eb358990715013a2ed5e97159a06b6d0b59ed3ac6f1b8c0b584b382ac2193b",
+  "head_run_hash": "643e87d319c417839d8f290eb11c7eea5b0715a0e48037002f874a0f196ca82d",
+  "model_config": {
+    "feature_dim": 768,
+    "hidden_dim": 64,
+    "attention_temperature": 0.07,
+    "residual_limit": 0.1,
+    "dropout": 0.1
+  },
+  "heads": [
+    {
+      "seed": 2026,
+      "path": "heads/minimal/seed2026/best.pt",
+      "bytes": 539235,
+      "sha256": "9cd4f843bd3ab6b2c6213c728d5a4aa30e9a3772b429a00ad7f07a541384cabc",
+      "epoch": 4
+    },
+    {
+      "seed": 2027,
+      "path": "heads/minimal/seed2027/best.pt",
+      "bytes": 539235,
+      "sha256": "8e598227823514b7b2337c73f8781b79723ab4227e40d7dee38653b2c88c1e14",
+      "epoch": 3
+    },
+    {
+      "seed": 2028,
+      "path": "heads/minimal/seed2028/best.pt",
+      "bytes": 539235,
+      "sha256": "39e83c6236b4fcdd19d6f886e0d0ccdd6f50319134b9566c4ae10e2f2d61656d",
+      "epoch": 4
+    }
+  ]
+}
