@@ -130,6 +130,39 @@ def style_outlier(texts, model):
             for i in range(len(texts))]
 
 
+def unique_tokens(texts):
+    """For each text, how many of its words match no word of any other text in a word-level
+    alignment. A text whose words all survive in some other candidate has none."""
+    tokens = [words(text) for text in texts]
+    counts = []
+    for i, mine in enumerate(tokens):
+        matched = [False] * len(mine)
+        for j, theirs in enumerate(tokens):
+            if j == i:
+                continue
+            matcher = difflib.SequenceMatcher(a=mine, b=theirs, autojunk=False)
+            for block in matcher.get_matching_blocks():
+                for k in range(block.a, block.a + block.size):
+                    matched[k] = True
+        counts.append(matched.count(False))
+    return counts
+
+
+def regime_gate(texts, model):
+    """Centrality's order when some candidate has no unique words (the negatives look like edits
+    of it); otherwise `unfamiliar` first, then centrality, alternating."""
+    unique = unique_tokens(texts)
+    if 0 in unique:
+        return interleave(texts, model)
+    first, second = order(unfamiliar(texts, model)), order(centrality(texts))
+    ranking = []
+    for pair in zip(first, second):
+        for index in pair:
+            if index not in ranking:
+                ranking.append(index)
+    return [len(texts) - ranking.index(k) for k in range(len(texts))]
+
+
 def order(scores):
     return sorted(range(len(scores)), key=lambda index: -scores[index])
 
@@ -158,7 +191,8 @@ def content_plus_outlier(texts, model):
 
 RULES = {"centrality": centrality, "style": style, "unfamiliar": unfamiliar, "rarity": rarity,
          "interleave": interleave, "rank_sum": rank_sum, "content_centrality": content_centrality,
-         "style_outlier": style_outlier, "content_plus_outlier": content_plus_outlier}
+         "style_outlier": style_outlier, "content_plus_outlier": content_plus_outlier,
+         "regime_gate": regime_gate}
 
 
 def candidate_sets(path, seed):

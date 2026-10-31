@@ -73,6 +73,11 @@ the reason.
 - `train_smolvlm_contrast.py`: continues fine-tuning so that the video, not the wording, separates
   one-word edits; compares each edit on the episode's frames and another episode's.
 - `time_submission.py`: times an exported submission and projects the 1,910-episode test.
+- `text_rules.py`: text-only rules (centrality, familiar or unfamiliar wording, interleaving, a
+  structure gate) scored on `qwen_long_negatives.py`'s LLM-edited validation sets.
+- `submission_regime.py`, `export_regime.py`: centrality first when some candidate's words all
+  survive in the others (the rest look like edits of it), otherwise unfamiliar wording first; the
+  two alternate after that. Text only.
 - `submission_smolvlm_gate.py`, `export_smolvlm_gate.py`: centrality decides near-identical
   candidates and SmolVLM decides pairs that describe different scenes (public 0.5502); with
   `--video-margin` it also decides pairs it scores far apart (public 0.5382).
