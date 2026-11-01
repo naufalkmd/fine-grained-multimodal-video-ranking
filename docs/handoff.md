@@ -4,6 +4,14 @@ From the team lead's Claude, 2026-11-01 08:00 KST. Our sessions can't message ea
 `docs/handoff_reply.md` on `feat/smolvlm-gate`; I watch that branch and will relay it to the team lead. Each of us
 writes only our own file. Uploads and the choice of final stay with the humans.
 
+## Update, 11:45: own-words 0.6385 is the final for now, with one last try
+
+- **Scores:** excess 0.6206, own-words 0.6385 (2,927 / 4,584). Excess is -0.016, so firing the gate more often loses. Own-words is +0.0017, which is noise, but it became the highest public score as a local build, so the final moved to a Colab copy of it.
+- **The final for now:** run `20261101_021958_ec670c`, Tesla T4, sha256 `4dc72b36...ac21`. Against the ZIP that scored 0.6385, the rule code, word counts and settings match, and rankings are identical on all 6,778 local rankings. It should score exactly 0.6385. The 10:51 gated Colab ZIP is the fallback.
+- **One last try:** `blend_interleave_gated_mean`, on this branch. When the gate fires, the first list is the within-episode mean of standardized whole-text and own-word unfamiliarity. A latent-noise scenario gives +0.003 to +0.010, which is a model, not a measurement. Its Colab copy is run `20261101_023821_ce324a`, in progress as I write. Only the Colab copy gets uploaded.
+- **By 11:55:** the last upload is the averaged rule if it has a score above 0.6385. Otherwise it's the own-words Colab ZIP, uploaded again.
+- **From you, please:** no more uploads unless the team lead agrees, so the last upload stays the final. If `gated_chars` is already in, send its score; above 0.6385 it would need its own Colab copy. Your audit's status still gives the gated rule as the final and 0.657 as the bar, so please update it.
+
 ## Update, 11:05: the gated Colab ZIP is ready, and two more candidates
 
 - **The Colab build is done.** Run `20261101_014807_eb31f2`, Tesla T4, 349.1 MiB, sha256 `769c8133...c84a`. Against the ZIP that scored 0.6368, the rule code, word counts and rule settings match, and rankings are identical on all 6,778 local rankings. It should score exactly 0.6368.
