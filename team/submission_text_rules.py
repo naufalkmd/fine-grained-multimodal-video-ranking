@@ -8,9 +8,10 @@
 - `blend`: the sum of the ranks from `consensus`, `meaning` and word-sequence similarity.
 
 `merge` set to "interleave" takes the rule's top candidate, then the candidate with the least familiar wording
-(team/submission_style.py), and so on in turn. With `gate` true as well, the least familiar wording goes first
-whenever no candidate has all its words found in the others (no candidate looks like the one the others were edited
-from). No state is kept between episodes.
+(team/submission_style.py), and so on in turn. With `gate` true, the least familiar wording goes first when no
+candidate looks like the one the others were edited from: no candidate has all its words in the others, or, with
+`gate_excess` set, even the best candidate's word edit distances to the others don't add up (`lowest_excess`). No
+state is kept between episodes.
 """
 
 import difflib
@@ -64,6 +65,38 @@ def unique_words(texts):
     return counts
 
 
+def word_distance(first, second):
+    previous = list(range(len(second) + 1))
+    for i, a in enumerate(first, 1):
+        current = [i]
+        for j, b in enumerate(second, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a != b)))
+        previous = current
+    return previous[-1]
+
+
+def lowest_excess(texts):
+    """How far the best candidate is from being the text the others were edited from: 0 when it is.
+
+    If c is the base and edits are independent, d(a, b) = d(a, c) + d(c, b) for the others a and b. A candidate's
+    excess is the sum over pairs of the others of d(c, a) + d(c, b) - d(a, b), divided by the sum of d(c, a) + d(c, b).
+    """
+    tokens = [words(text) for text in texts]
+    size = len(tokens)
+    distance = [[0] * size for _ in range(size)]
+    for i in range(size):
+        for j in range(i + 1, size):
+            distance[i][j] = distance[j][i] = word_distance(tokens[i], tokens[j])
+    values = []
+    for c in range(size):
+        others = [i for i in range(size) if i != c]
+        pairs = [(a, b) for index, a in enumerate(others) for b in others[index + 1:]]
+        bottom = sum(distance[c][a] + distance[c][b] for a, b in pairs)
+        top = sum(distance[c][a] + distance[c][b] - distance[a][b] for a, b in pairs)
+        values.append(top / bottom if bottom else 0.0)
+    return min(values)
+
+
 class Submission:
     def __init__(self, artifact_dir: str, device: str):
         root = Path(artifact_dir)
@@ -71,6 +104,7 @@ class Submission:
         self.rule = config["rule"]
         self.merge = config.get("merge", "none")
         self.gate = config.get("gate", False)
+        self.gate_excess = config.get("gate_excess")
         if self.merge == "interleave":
             self.counts = json.loads((root / "models/style/counts.json").read_text(encoding="utf-8"))
         self.device = torch.device(device)
@@ -100,12 +134,21 @@ class Submission:
             return [sum(values) for values in zip(*parts)]
         raise ValueError(f"Unknown rule: {self.rule}")
 
+    def _no_base_candidate(self, texts):
+        """True when the gate finds no candidate that looks like the one the others were edited from."""
+        if not getattr(self, "gate", False):
+            return False
+        if 0 not in unique_words(texts):
+            return True
+        threshold = getattr(self, "gate_excess", None)
+        return threshold is not None and lowest_excess(texts) >= threshold
+
     def _order(self, texts):
         values = self._values(texts)
         order = sorted(range(len(texts)), key=lambda index: -values[index])
         if self.merge == "interleave":
             unfamiliar = descending([-value for value in style_scores(texts, self.counts)])
-            if getattr(self, "gate", False) and 0 not in unique_words(texts):
+            if self._no_base_candidate(texts):
                 return interleaved(unfamiliar, order)
             return interleaved(order, unfamiliar)
         return order

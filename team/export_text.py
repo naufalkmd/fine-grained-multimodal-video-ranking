@@ -10,6 +10,8 @@ never loads them. `--method` picks the submission:
   (text_blend_interleave), with the same counts.
 - `blend_interleave_gated`: the same, but reversed familiarity goes first when no candidate looks like the one
   the others were edited from (no candidate has all its words in the others).
+- `blend_interleave_gated_excess`: also reversed familiarity first when even the best candidate's word edit distances
+  to the others don't add up. The threshold, 0.3, was fixed on synthetic candidates, not on public scores.
 
     python -m team.export_text --method blend_interleave --base-dir cuda/sample_submission \
         --data-dir cuda/Data/Train --output-dir cuda/text_blend_interleave_submission
@@ -42,7 +44,9 @@ def export(method, base_dir, data_dir, output_dir):
             source, config = "submission_style.py", {"merge": "interleave", "style_sign": -1}
         else:
             source, config = "submission_text_rules.py", {"rule": "blend", "merge": "interleave",
-                                                          "gate": method == "blend_interleave_gated"}
+                                                          "gate": method != "blend_interleave"}
+            if method == "blend_interleave_gated_excess":
+                config["gate_excess"] = 0.3
         note = "Word-pair counts from the organizers' training descriptions; ignores the video."
         descriptions = [episode.description for episode in load_episodes(data_dir)]
         (output_dir / "models/style").mkdir(parents=True)
@@ -57,8 +61,8 @@ def export(method, base_dir, data_dir, output_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave", "blend_interleave_gated"],
-                        required=True)
+    parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave", "blend_interleave_gated",
+                                             "blend_interleave_gated_excess"], required=True)
     parser.add_argument("--base-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
