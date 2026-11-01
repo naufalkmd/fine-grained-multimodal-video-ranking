@@ -15,6 +15,7 @@ never loads them. `--method` picks the submission:
 - `blend_interleave_gated_excess`: also reversed familiarity first when even the best candidate's word edit distances
   to the others don't add up. The threshold, 0.3, was fixed on synthetic candidates, not on public scores.
 - `blend_interleave_gated_own`: when the gate fires, the first pick comes from a candidate's own words only.
+- `blend_interleave_gated_mean`: when the gate fires, the first list averages whole-text and own-word unfamiliarity.
 - `blend_interleave_gated_base_first`: when it doesn't fire, candidates with no own words come before the others.
 
     python -m team.export_text --method blend_interleave --base-dir cuda/sample_submission \
@@ -56,6 +57,8 @@ def export(method, base_dir, data_dir, output_dir):
                 config["chars"] = True
             if method == "blend_interleave_gated_own":
                 config["gate_own_words"] = True
+            if method == "blend_interleave_gated_mean":
+                config["gate_mean"] = True
             if method == "blend_interleave_gated_base_first":
                 config["gate_base_first"] = True
         note = "Word-pair counts from the organizers' training descriptions; ignores the video."
@@ -79,6 +82,7 @@ def main():
     parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave", "blend_interleave_gated",
                                              "blend_interleave_gated_excess", "blend_interleave_chars",
                                              "blend_interleave_gated_chars", "blend_interleave_gated_own",
+                                             "blend_interleave_gated_mean",
                                              "blend_interleave_gated_base_first"], required=True)
     parser.add_argument("--base-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
