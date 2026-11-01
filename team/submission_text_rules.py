@@ -10,8 +10,9 @@
 `merge` set to "interleave" takes the rule's top candidate, then the candidate with the least familiar wording
 (team/submission_style.py), and so on in turn. With `gate` true, the least familiar wording goes first when no
 candidate looks like the one the others were edited from: no candidate has all its words in the others, or, with
-`gate_excess` set, even the best candidate's word edit distances to the others don't add up (`lowest_excess`). No
-state is kept between episodes.
+`gate_excess` set, even the best candidate's word edit distances to the others don't add up (`lowest_excess`). With
+`chars` true, the least familiar wording averages, within the episode, standardized word-pair familiarity and
+character familiarity (team/submission_chars.py, case and punctuation kept). No state is kept between episodes.
 """
 
 import difflib
@@ -49,6 +50,12 @@ def consensus_scores(texts):
         shares = [sum(word in other for j, other in enumerate(sets) if j != index) / others for word in own]
         scores.append(statistics.fmean(shares) if shares else 0.0)
     return scores
+
+
+def standardized(values):
+    spread = statistics.pstdev(values) if len(values) > 1 else 0.0
+    mean = statistics.fmean(values)
+    return [(value - mean) / spread if spread else 0.0 for value in values]
 
 
 def unique_words(texts):
@@ -107,6 +114,10 @@ class Submission:
         self.gate_excess = config.get("gate_excess")
         if self.merge == "interleave":
             self.counts = json.loads((root / "models/style/counts.json").read_text(encoding="utf-8"))
+        self.chars = None
+        if config.get("chars"):
+            from submission_chars import CharModel
+            self.chars = CharModel(json.loads((root / "models/style/char_counts.json").read_text(encoding="utf-8")))
         self.device = torch.device(device)
         self.tokenizer = self.model = None
         if self.rule in ("meaning", "blend"):
@@ -143,11 +154,19 @@ class Submission:
         threshold = getattr(self, "gate_excess", None)
         return threshold is not None and lowest_excess(texts) >= threshold
 
+    def _unfamiliar(self, texts):
+        """Higher for less familiar wording."""
+        word = [-value for value in style_scores(texts, self.counts)]
+        if getattr(self, "chars", None) is None:
+            return word
+        char = [-self.chars.familiarity(text) for text in texts]
+        return [a + b for a, b in zip(standardized(word), standardized(char))]
+
     def _order(self, texts):
         values = self._values(texts)
         order = sorted(range(len(texts)), key=lambda index: -values[index])
         if self.merge == "interleave":
-            unfamiliar = descending([-value for value in style_scores(texts, self.counts)])
+            unfamiliar = descending(self._unfamiliar(texts))
             if self._no_base_candidate(texts):
                 return interleaved(unfamiliar, order)
             return interleaved(order, unfamiliar)
