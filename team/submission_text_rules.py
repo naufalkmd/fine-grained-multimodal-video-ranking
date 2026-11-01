@@ -12,17 +12,21 @@
 candidate looks like the one the others were edited from: no candidate has all its words in the others, or, with
 `gate_excess` set, even the best candidate's word edit distances to the others don't add up (`lowest_excess`). With
 `chars` true, the least familiar wording averages, within the episode, standardized word-pair familiarity and
-character familiarity (team/submission_chars.py, case and punctuation kept). No state is kept between episodes.
+character familiarity (team/submission_chars.py, case and punctuation kept). When the gate fires, `gate_own_words` takes
+the first list from a candidate's own words only (`own_word_scores`); otherwise, `gate_base_first` moves the candidates
+with no own words to the front. No state is kept between episodes.
 """
 
 import difflib
 import json
+import math
 import re
 import statistics
 from pathlib import Path
 
 import torch
-from submission_style import descending, interleaved, style_scores
+from submission_style import UNIGRAM_SHARE, descending, interleaved, style_scores
+from submission_style import words as style_words
 from transformers import AutoModel, AutoTokenizer
 
 
@@ -58,18 +62,44 @@ def standardized(values):
     return [(value - mean) / spread if spread else 0.0 for value in values]
 
 
-def unique_words(texts):
-    """For each text, how many of its words match no word of any other text in a word-level alignment."""
+def own_word_masks(texts):
+    """For each text, which of its words match no word of any other text in a word-level alignment."""
     tokens = [words(text) for text in texts]
-    counts = []
+    masks = []
     for i, mine in enumerate(tokens):
         matched = [False] * len(mine)
         for j, theirs in enumerate(tokens):
             if j != i:
                 for block in difflib.SequenceMatcher(a=mine, b=theirs, autojunk=False).get_matching_blocks():
                     matched[block.a:block.a + block.size] = [True] * block.size
-        counts.append(matched.count(False))
-    return counts
+        masks.append([not value for value in matched])
+    return masks
+
+
+def unique_words(texts):
+    return [sum(mask) for mask in own_word_masks(texts)]
+
+
+def own_word_scores(texts, counts):
+    """Mean log probability of the word pairs that touch a text's own words: style_scores without the shared wording."""
+    unigrams, bigrams = counts["unigrams"], counts["bigrams"]
+    total = sum(unigrams.values())
+    vocabulary = len(unigrams) + 1
+
+    def log_probability(first, second):
+        unigram = (unigrams.get(second, 0) + 1) / (total + vocabulary)
+        seen = unigrams.get(first, 0)
+        bigram = bigrams.get(f"{first} {second}", 0) / seen if seen else 0.0
+        return math.log((1 - UNIGRAM_SHARE) * bigram + UNIGRAM_SHARE * unigram)
+
+    scores = []
+    for text, mask in zip(texts, own_word_masks(texts)):
+        tokens = style_words(text)
+        own = [False, *mask, False]
+        values = [log_probability(a, b) for index, (a, b) in enumerate(zip(tokens, tokens[1:]))
+                  if own[index] or own[index + 1]]
+        scores.append(statistics.fmean(values) if values else 0.0)
+    return scores
 
 
 def word_distance(first, second):
@@ -112,6 +142,8 @@ class Submission:
         self.merge = config.get("merge", "none")
         self.gate = config.get("gate", False)
         self.gate_excess = config.get("gate_excess")
+        self.gate_own_words = config.get("gate_own_words", False)
+        self.gate_base_first = config.get("gate_base_first", False)
         if self.merge == "interleave":
             self.counts = json.loads((root / "models/style/counts.json").read_text(encoding="utf-8"))
         self.chars = None
@@ -168,7 +200,12 @@ class Submission:
         if self.merge == "interleave":
             unfamiliar = descending(self._unfamiliar(texts))
             if self._no_base_candidate(texts):
+                if getattr(self, "gate_own_words", False):
+                    unfamiliar = descending([-value for value in own_word_scores(texts, self.counts)])
                 return interleaved(unfamiliar, order)
+            if getattr(self, "gate_base_first", False):
+                own = unique_words(texts)
+                order = sorted(order, key=lambda index: own[index] > 0)
             return interleaved(order, unfamiliar)
         return order
 
