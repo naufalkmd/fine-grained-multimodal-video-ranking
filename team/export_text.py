@@ -30,6 +30,8 @@ def export(method, base_dir, data_dir, output_dir):
     shutil.copytree(base_dir, output_dir, dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns("__pycache__", "submission.py", "training_info.json",
                                                   "inference_config.json"))
+    if method != "interleave":
+        shutil.copyfile(ROOT / "team/submission_style.py", output_dir / "submission_style.py")
     if method == "blend":
         source, config = "submission_text_rules.py", {"rule": "blend"}
         note = "Text rule; ignores the video and has no trained weights."
@@ -38,7 +40,6 @@ def export(method, base_dir, data_dir, output_dir):
             source, config = "submission_style.py", {"merge": "interleave", "style_sign": -1}
         else:
             source, config = "submission_text_rules.py", {"rule": "blend", "merge": "interleave"}
-            shutil.copyfile(ROOT / "team/submission_style.py", output_dir / "submission_style.py")
         note = "Word-pair counts from the organizers' training descriptions; ignores the video."
         descriptions = [episode.description for episode in load_episodes(data_dir)]
         (output_dir / "models/style").mkdir(parents=True)

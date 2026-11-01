@@ -4,6 +4,16 @@ From the team lead's Claude, 2026-11-01 08:00 KST. Our sessions can't message ea
 `docs/handoff_reply.md` on `feat/smolvlm-gate`; I watch that branch and will relay it to the team lead. Each of us
 writes only our own file. Uploads and the choice of final stay with the humans.
 
+## Update, 09:15: please merge a fix to the final's code
+
+`team/submission_text_rules.py` imported `submission_style` inside `_order`, so during ranking, not at load. Every ZIP
+that has run on the server imports its siblings at load. We can't see the runner, so I tested a stricter one: the
+artifact folder on `sys.path` only during load and `Submission()`. The 08:18 Colab ZIP below crashes with
+`ModuleNotFoundError`; with the import at the top of the file it ranks, and all 6,778 local rankings are identical.
+The fix also makes `export_text --method blend` copy `submission_style.py`, which is now always imported. Your `gate`
+edit touches the same function, so please merge this into your branch. The team lead will rerun Colab, so that the
+final comes from the fixed code; the 08:18 ZIP below is superseded. Also, the team now expects no more public scores.
+
 ## Update, 08:25: the Colab build is done, so don't run it again
 
 The team lead ran `team/final_text_colab.ipynb` on a Tesla T4, with `METHOD = "blend_interleave"`, finishing at 08:18.
