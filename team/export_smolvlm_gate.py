@@ -20,7 +20,8 @@ MODEL_FILES = ("model.safetensors", "config.json", "generation_config.json", "ad
                "processor_config.json")
 
 
-def export(model_dir, kit_submission, output_dir, threshold, max_frames, image_size, prior_weight):
+def export(model_dir, kit_submission, output_dir, threshold, max_frames, image_size, prior_weight,
+           video_margin=None):
     model_dir, kit_submission, output_dir = map(Path, (model_dir, kit_submission, output_dir))
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Use an empty submission directory: {output_dir}")
@@ -38,10 +39,11 @@ def export(model_dir, kit_submission, output_dir, threshold, max_frames, image_s
     shutil.copyfile(ROOT / "team/submission_smolvlm_gate.py", output_dir / "submission.py")
     save_json(output_dir / "inference_config.json", {"smolvlm_gate": {
         "threshold": threshold, "max_frames": max_frames, "image_size": image_size,
-        "prior_weight": prior_weight}})
+        "prior_weight": prior_weight, "video_margin": video_margin}})
     training = json.loads((model_dir / "training_info.json").read_text(encoding="utf-8"))
     save_json(output_dir / "training_info.json", {
-        "method": "centrality, with SmolVLM deciding pairs below the similarity threshold",
+        "method": "centrality, with SmolVLM deciding pairs below the similarity threshold"
+                  + (f" or with SmolVLM scores at least {video_margin} apart" if video_margin else ""),
         "model_id": "HuggingFaceTB/SmolVLM-256M-Instruct", "storage_dtype": "float16",
         "smolvlm_training": training,
         "note": "The kit's DINOv2, MPNet and weights/mlp.pt are present only because package.py "
@@ -60,9 +62,11 @@ def main():
     parser.add_argument("--max-frames", type=int, default=8)
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--prior-weight", type=float, default=1.0)
+    parser.add_argument("--video-margin", type=float,
+                        help="Also let SmolVLM decide pairs whose scores differ by at least this.")
     args = parser.parse_args()
     export(args.model_dir, args.kit_submission, args.output_dir, args.threshold, args.max_frames,
-           args.image_size, args.prior_weight)
+           args.image_size, args.prior_weight, args.video_margin)
 
 
 if __name__ == "__main__":

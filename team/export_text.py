@@ -8,6 +8,8 @@ never loads them. `--method` picks the submission:
   (text_interleave). Word-pair counts are built here from the training descriptions.
 - `blend_interleave`: team/submission_text_rules.py, `blend` and reversed word-pair familiarity in turn
   (text_blend_interleave), with the same counts.
+- `blend_interleave_gated`: the same, but reversed familiarity goes first when no candidate looks like the one
+  the others were edited from (no candidate has all its words in the others).
 
     python -m team.export_text --method blend_interleave --base-dir cuda/sample_submission \
         --data-dir cuda/Data/Train --output-dir cuda/text_blend_interleave_submission
@@ -39,7 +41,8 @@ def export(method, base_dir, data_dir, output_dir):
         if method == "interleave":
             source, config = "submission_style.py", {"merge": "interleave", "style_sign": -1}
         else:
-            source, config = "submission_text_rules.py", {"rule": "blend", "merge": "interleave"}
+            source, config = "submission_text_rules.py", {"rule": "blend", "merge": "interleave",
+                                                          "gate": method == "blend_interleave_gated"}
         note = "Word-pair counts from the organizers' training descriptions; ignores the video."
         descriptions = [episode.description for episode in load_episodes(data_dir)]
         (output_dir / "models/style").mkdir(parents=True)
@@ -54,7 +57,8 @@ def export(method, base_dir, data_dir, output_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave"], required=True)
+    parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave", "blend_interleave_gated"],
+                        required=True)
     parser.add_argument("--base-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

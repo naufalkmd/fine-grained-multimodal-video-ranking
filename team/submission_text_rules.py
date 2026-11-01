@@ -8,7 +8,9 @@
 - `blend`: the sum of the ranks from `consensus`, `meaning` and word-sequence similarity.
 
 `merge` set to "interleave" takes the rule's top candidate, then the candidate with the least familiar wording
-(team/submission_style.py), and so on in turn. No state is kept between episodes.
+(team/submission_style.py), and so on in turn. With `gate` true as well, the least familiar wording goes first
+whenever no candidate has all its words found in the others (no candidate looks like the one the others were edited
+from). No state is kept between episodes.
 """
 
 import difflib
@@ -48,12 +50,27 @@ def consensus_scores(texts):
     return scores
 
 
+def unique_words(texts):
+    """For each text, how many of its words match no word of any other text in a word-level alignment."""
+    tokens = [words(text) for text in texts]
+    counts = []
+    for i, mine in enumerate(tokens):
+        matched = [False] * len(mine)
+        for j, theirs in enumerate(tokens):
+            if j != i:
+                for block in difflib.SequenceMatcher(a=mine, b=theirs, autojunk=False).get_matching_blocks():
+                    matched[block.a:block.a + block.size] = [True] * block.size
+        counts.append(matched.count(False))
+    return counts
+
+
 class Submission:
     def __init__(self, artifact_dir: str, device: str):
         root = Path(artifact_dir)
         config = json.loads((root / "inference_config.json").read_text(encoding="utf-8"))
         self.rule = config["rule"]
         self.merge = config.get("merge", "none")
+        self.gate = config.get("gate", False)
         if self.merge == "interleave":
             self.counts = json.loads((root / "models/style/counts.json").read_text(encoding="utf-8"))
         self.device = torch.device(device)
@@ -87,7 +104,10 @@ class Submission:
         values = self._values(texts)
         order = sorted(range(len(texts)), key=lambda index: -values[index])
         if self.merge == "interleave":
-            return interleaved(order, descending([-value for value in style_scores(texts, self.counts)]))
+            unfamiliar = descending([-value for value in style_scores(texts, self.counts)])
+            if getattr(self, "gate", False) and 0 not in unique_words(texts):
+                return interleaved(unfamiliar, order)
+            return interleaved(order, unfamiliar)
         return order
 
     def score(self, images, choices):

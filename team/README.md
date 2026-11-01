@@ -56,6 +56,8 @@ the reason.
 - `submission_ranker.py`: exported as the submission's `submission.py`. With `central_weight` in
   `inference_config.json` (set by `export_ranker.py --central-weight`), it adds candidate centrality.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
+- `compare_public.py`: compares public per-episode CSVs with a baseline (paired difference, sign
+  test, rank moves). Keep the CSVs in `cuda/public_csv/`, which git ignores.
 - `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
   `make_final_notebook.py`, so edit that script rather than the notebook.
 - `submission_siglip.py`, `export_siglip.py`: ranks with SigLIP's image-text match, with no training.
@@ -70,16 +72,33 @@ the reason.
   some batches so that it also learns the no-frame likelihood.
 - `smolvlm_check.py`: scores SmolVLM with the right and a wrong video, at prior weights 0 and 1,
   and runs action pairing. Saves the raw scores.
+- `train_smolvlm_contrast.py`: continues fine-tuning so that the video, not the wording, separates
+  one-word edits; compares each edit on the episode's frames and another episode's.
+- `time_submission.py`: times an exported submission and projects the 1,910-episode test.
+- `text_rules.py`: text-only rules (centrality, familiar or unfamiliar wording, interleaving, a
+  structure gate) scored on `qwen_long_negatives.py`'s LLM-edited validation sets.
+- `submission_fusion.py`, `export_fusion.py`: text signals (centrality, unfamiliar words or characters
+  under counts from the training descriptions, shortness) combined by one signal, interleaving or
+  public rank shares (`bayes`), optionally with the structure gate. Set in `weights/rule.json`.
+- `order_check.py`: checks locally whether a candidate's events fit the frames in the stated order
+  (SigLIP, no training). `submission_order.py`, `export_order.py`: the same as an upload probe.
+- `merge_bounds.py`: exact worst, best and overlap-fitted scores for merging two rules, from their
+  public per-episode CSVs.
+- `submission_regime.py`, `export_regime.py`: centrality first when some candidate's words all
+  survive in the others (the rest look like edits of it), otherwise unfamiliar wording first; the
+  two alternate after that. Text only.
 - `submission_smolvlm_gate.py`, `export_smolvlm_gate.py`: centrality decides near-identical
-  candidates and SmolVLM decides pairs that describe different scenes. Public 0.5502.
+  candidates and SmolVLM decides pairs that describe different scenes (public 0.5502); with
+  `--video-margin` it also decides pairs it scores far apart (public 0.5382).
 - `submission_text_rules.py`: ranks by how candidates relate to each other (consensus, MPNet meaning
   or `blend`). With `merge` set to `interleave`, it takes turns with the least familiar wording.
 - `submission_style.py`: ranks by how familiar a candidate's word pairs are from the training
   descriptions. `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
 - `export_text.py`: creates `text_blend`, `text_interleave` or `text_blend_interleave`.
 - `package_small.py`: packages `text_interleave` without the kit's encoders, which it never loads.
-- `final_text_colab.ipynb`: produces those finals, or `arbiter`, on a T4. Built from the organizers'
-  notebook by `make_text_notebook.py`, so edit that script rather than the notebook.
+- `final_text_colab.ipynb`: **the notebook for the final.** Produces those finals, or `arbiter`, on a
+  T4, with the word-pair familiarity measured publicly. Built from the organizers' notebook by
+  `make_text_notebook.py`, so edit that script rather than the notebook.
 - `submission_fill.py`, `export_fill.py`: SmolVLM's support from the frames on only the tokens that
   differ between candidates, alone or with centrality.
 - `submission_unfamiliar.py`, `export_unfamiliar.py`: least expected wording under SmolVLM with no
@@ -107,7 +126,10 @@ Download the model first with `huggingface_hub.snapshot_download("Qwen/Qwen3-4B-
 local_dir="cuda/models/qwen3-4b-instruct-2507")`. It is used for augmentation only and is never
 part of a submission.
 
-SmolVLM gate (fine-tuning about 25 minutes on an RTX 5070; the check needs the Qwen files above):
+SmolVLM gate (fine-tuning about 25 minutes on an RTX 5070; the check needs the Qwen files above).
+The fine-tuned model is on the team Drive next to the Qwen data, as the folder `ft_v1` (494 MB,
+float16, with `training_info.json`); ask njunu17 for the link. Put it at
+`cuda/outputs/smolvlm/ft_v1/` to skip the training step below.
 
 ```bash
 python -c "from huggingface_hub import snapshot_download; snapshot_download('HuggingFaceTB/SmolVLM-256M-Instruct', local_dir='cuda/models/smolvlm-256m-instruct')"
