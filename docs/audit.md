@@ -133,7 +133,9 @@ its public score exactly):
 | The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`team/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/submission_regime.py` and `team/submission_fusion.py` use a different smoothing that was never uploaded |
 
 So `text_blend_interleave` beats every uploaded rule even in its worst case, by +0.012 over
-`text_blend`, and probably by about +0.04.
+`text_blend`, and probably by about +0.04. **Uploaded: 0.5958**, inside the predicted 0.59-0.60 and
+the best public score so far. The site now shows only the mean, no per-episode CSV, so later uploads
+can't be analysed episode by episode.
 
 **Training the order aligner (Fact, local).** `team/train_order.py` trains low-rank corrections and
 a position prior on frozen SigLIP features, with the training descriptions as positives and code-made
@@ -155,11 +157,10 @@ within noise, so the untrained check is kept.
 
 ## 7. Strategy from here
 
-1. **Upload `text_blend_interleave` first.** Its worst case (0.5639) beats every uploaded rule, so
-   it is the safe final unless something beats it in a paired comparison.
-2. Upload the order check alone (`probe_order.zip`). With its CSV, `team/merge_bounds.py --third`
-   scores taking turns among three rules without another upload. Use the order check only if that
-   gain holds in the worst case or is large in the independent case.
+1. **`text_blend_interleave` is the final unless something beats 0.5958.**
+2. Upload the order check alone (`probe_order.zip`). Without CSVs only its mean can be read: at
+   0.42 or more, build and upload `text_blend_interleave` with the order check added; between 0.38
+   and 0.42, or lower, keep `text_blend_interleave` and drop the video.
 3. Spend remaining uploads on information: shortness, characters.
 4. Build the final on Colab by 10:30 with the lead's `team/final_text_colab.ipynb` (it builds
    `text_blend_interleave` with the measured style score), adding SigLIP only if the order check
