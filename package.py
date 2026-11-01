@@ -19,7 +19,7 @@ OPTIONAL = {"ranker_model.py", "submission_ranker.py", "submission_siglip.py", "
             "submission_siglip_diff.py", "weights/reference_frames.pt",
             "submission_evidence.py", "smolvlm_scorer.py", "submission_fill.py",
             "submission_style.py", "submission_text_rules.py", "weights/bigram_counts.json",
-            "weights/char_counts.json", "weights/rule.json"}
+            "weights/char_counts.json", "weights/rule.json", "submission_order.py"}
 
 
 def package(source, output, force=False):
