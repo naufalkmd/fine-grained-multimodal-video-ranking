@@ -1,5 +1,28 @@
 # Audit: what we know, how sure we are, and what to do next
 
+## Status at a glance (10:35 KST)
+
+- **Final: `text_blend_interleave_gated`, public 0.6368.** Text only. It takes `text_blend`'s top
+  pick and the least familiar wording's top pick in turn, but puts the least familiar wording first
+  when no candidate has all its words in the others (no candidate looks like the one the others were
+  edited from). Build it on Colab with `METHOD = "blend_interleave_gated"` in
+  `team/final_text_colab.ipynb`.
+- How we got there: `text_blend` 0.5521 and reversed word-pair familiarity 0.5327 are uncorrelated
+  per episode; taking turns gave 0.5958 (its worst case, 0.5639, was checked exactly from the public
+  CSVs before upload); the gate then added +0.041. The gate can't act where the correct text is the
+  base, which is where `text_blend` wins.
+- Video: the SigLIP order check scored 0.4295 alone (chance 0.375), but locally it also favours
+  candidates with fewer events even with the wrong video, so that isn't clean evidence of an image
+  signal; added from third place on (`text_order_third`) it scored 0.5914, no gain. Every other
+  image method scored at or below centrality.
+- Optional, only while the final's Colab build is already running and a second build can still start
+  by about 11:15: upload `text_blend_interleave_gated_excess` first (the gate also fires when even the
+  best candidate's edit distances don't add up; fired on 9% of synthetic "correct is the base" sets
+  and 74% of order-only sets), then `text_blend_interleave_gated_chars` (adds character familiarity,
+  which keeps case and punctuation, to the least familiar wording; changes its pick in 20-33% of our
+  episodes). Replace the final only at about 0.657 or more.
+- The site no longer gives per-episode CSVs, only the mean.
+
 Written 2026-11-01 about 07:50 KST, after rereading every source below. This is the main reference
 for strategy from now on: update it when a fact changes, rather than adding conclusions elsewhere.
 Levels used: **Fact** (documented or measured), **Strong** (follows from facts with little room for
@@ -158,9 +181,14 @@ within noise, so the untrained check is kept.
 ## 7. Strategy from here
 
 1. **`text_blend_interleave` is the final unless something beats 0.5958.**
-2. Upload the order check alone (`probe_order.zip`). Without CSVs only its mean can be read: at
-   0.42 or more, build and upload `text_blend_interleave` with the order check added; between 0.38
-   and 0.42, or lower, keep `text_blend_interleave` and drop the video.
+2. The order check alone (`probe_order.zip`) scored **0.4295 publicly**, about three standard errors
+   above chance. Part of that may be structure rather than the frames: it favours candidates with
+   fewer events even with the wrong video (see Status). It is weaker alone than either text signal
+   (0.55, 0.53), so it shouldn't decide first place. Next upload:
+   `text_order_third.zip` (`team/submission_text_order.py`, `order_merge` "third"), which keeps
+   `text_blend_interleave`'s top two and lets the order check fill places from third on. Expected
+   gain is small (+0.005 to +0.02); final if it beats 0.5958. `text_blend_interleave_gated` is
+   dropped: the gate does nothing on order-only negatives.
 3. Spend remaining uploads on information: shortness, characters.
 4. Build the final on Colab by 10:30 with the lead's `team/final_text_colab.ipynb` (it builds
    `text_blend_interleave` with the measured style score), adding SigLIP only if the order check

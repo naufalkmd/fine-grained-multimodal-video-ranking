@@ -1,5 +1,8 @@
 # Findings and status (njunu17's line of work)
 
+> **Superseded for current status: read [audit.md](audit.md).** As of 10:30 KST the final is
+> `text_blend_interleave_gated`, public **0.6368**. This file keeps the earlier detail.
+
 What this line of work found, what is ready to submit, and what is still open, as of 2026-11-01
 06:15 KST. Every number here is also a row in [validation.md](validation.md), with its settings.
 Local scores use our own validation candidates; public scores come from the leaderboard.

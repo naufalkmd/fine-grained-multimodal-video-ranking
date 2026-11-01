@@ -10,8 +10,12 @@ never loads them. `--method` picks the submission:
   (text_blend_interleave), with the same counts.
 - `blend_interleave_gated`: the same, but reversed familiarity goes first when no candidate looks like the one
   the others were edited from (no candidate has all its words in the others).
+- `blend_interleave_chars` / `blend_interleave_gated_chars`: as `blend_interleave` / `blend_interleave_gated`, with
+  the least familiar wording judged by word pairs and characters together (team/submission_chars.py).
 - `blend_interleave_gated_excess`: also reversed familiarity first when even the best candidate's word edit distances
   to the others don't add up. The threshold, 0.3, was fixed on synthetic candidates, not on public scores.
+- `blend_interleave_gated_own`: when the gate fires, the first pick comes from a candidate's own words only.
+- `blend_interleave_gated_base_first`: when it doesn't fire, candidates with no own words come before the others.
 
     python -m team.export_text --method blend_interleave --base-dir cuda/sample_submission \
         --data-dir cuda/Data/Train --output-dir cuda/text_blend_interleave_submission
@@ -24,6 +28,7 @@ from pathlib import Path
 
 from common import ROOT, save_json
 from dataset import load_episodes
+from team.submission_chars import build_char_counts
 from team.submission_style import build_counts
 
 
@@ -44,14 +49,24 @@ def export(method, base_dir, data_dir, output_dir):
             source, config = "submission_style.py", {"merge": "interleave", "style_sign": -1}
         else:
             source, config = "submission_text_rules.py", {"rule": "blend", "merge": "interleave",
-                                                          "gate": method != "blend_interleave"}
+                                                          "gate": "gated" in method}
             if method == "blend_interleave_gated_excess":
                 config["gate_excess"] = 0.3
+            if method.endswith("_chars"):
+                config["chars"] = True
+            if method == "blend_interleave_gated_own":
+                config["gate_own_words"] = True
+            if method == "blend_interleave_gated_base_first":
+                config["gate_base_first"] = True
         note = "Word-pair counts from the organizers' training descriptions; ignores the video."
         descriptions = [episode.description for episode in load_episodes(data_dir)]
         (output_dir / "models/style").mkdir(parents=True)
         (output_dir / "models/style/counts.json").write_text(
             json.dumps(build_counts(descriptions)), encoding="utf-8")
+        if config.get("chars"):
+            shutil.copyfile(ROOT / "team/submission_chars.py", output_dir / "submission_chars.py")
+            (output_dir / "models/style/char_counts.json").write_text(
+                json.dumps(build_char_counts(descriptions)), encoding="utf-8")
     shutil.copyfile(ROOT / "team" / source, output_dir / "submission.py")
     save_json(output_dir / "inference_config.json", config)
     save_json(output_dir / "training_info.json", {"method": method, "uses_video": False, "trained": False, "note": note})
@@ -62,7 +77,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--method", choices=["blend", "interleave", "blend_interleave", "blend_interleave_gated",
-                                             "blend_interleave_gated_excess"], required=True)
+                                             "blend_interleave_gated_excess", "blend_interleave_chars",
+                                             "blend_interleave_gated_chars", "blend_interleave_gated_own",
+                                             "blend_interleave_gated_base_first"], required=True)
     parser.add_argument("--base-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
