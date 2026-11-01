@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (11:15 KST): final plan
+## Status at a glance (11:20 KST): final plan
 
 - **Final: `text_blend_interleave_gated`, public 0.6368, built on Colab at 10:51** (run
   `20261101_014807_eb31f2`, sha256 `769c8133...c84a`, rankings identical to the uploaded ZIP). Upload
@@ -10,6 +10,9 @@
   lead's bar from a decision analysis in `docs/validation.md` ("After the gate"). With several
   candidates tried, take only the highest one above the bar; don't go lower. A replacement is
   rebuilt on Colab with its `METHOD` (about 3 minutes, start by 11:30) and uploaded to confirm.
+- **Results (11:20): `gated_excess` 0.6206 (-0.016), `gated_own` 0.6385 (+0.0017, reported as
+  own).** Neither clears 0.644, so the final stays `text_blend_interleave_gated`. Excess firing more
+  widely hurt, which fits its misfires on base and order-only sets.
 - `gated_chars` is not uploaded: more candidates only raise the chance of picking a lucky one, and
   its expected change is the smallest.
 - How we got there: `text_blend` 0.5521 and reversed word-pair familiarity 0.5327 are uncorrelated
