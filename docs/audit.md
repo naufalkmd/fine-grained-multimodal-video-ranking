@@ -158,9 +158,13 @@ within noise, so the untrained check is kept.
 ## 7. Strategy from here
 
 1. **`text_blend_interleave` is the final unless something beats 0.5958.**
-2. Upload the order check alone (`probe_order.zip`). Without CSVs only its mean can be read: at
-   0.42 or more, build and upload `text_blend_interleave` with the order check added; between 0.38
-   and 0.42, or lower, keep `text_blend_interleave` and drop the video.
+2. The order check alone (`probe_order.zip`) scored **0.4295 publicly**, about three standard errors
+   above chance: the first image method to carry information to the test. It is weaker alone than
+   either text signal (0.55, 0.53), so it shouldn't decide first place. Next upload:
+   `text_order_third.zip` (`team/submission_text_order.py`, `order_merge` "third"), which keeps
+   `text_blend_interleave`'s top two and lets the order check fill places from third on. Expected
+   gain is small (+0.005 to +0.02); final if it beats 0.5958. `text_blend_interleave_gated` is
+   dropped: the gate does nothing on order-only negatives.
 3. Spend remaining uploads on information: shortness, characters.
 4. Build the final on Colab by 10:30 with the lead's `team/final_text_colab.ipynb` (it builds
    `text_blend_interleave` with the measured style score), adding SigLIP only if the order check
