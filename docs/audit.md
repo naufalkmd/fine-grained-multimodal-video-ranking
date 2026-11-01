@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (09:50 KST)
+## Status at a glance (10:05 KST)
 
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
@@ -10,9 +10,9 @@
   events (correlation -0.15 to -0.31; `added_action` 0.486 with the wrong video). Only on
   same-length reorderings is the image part clear (0.470 right vs 0.376 wrong). The public mean
   can't separate the two.
-- **In progress: `text_order_third.zip`**, the 0.5958 rule's top two plus the order check from third
-  place on. Replace the final only if it beats 0.5958 by about 0.02 (means only, so smaller gaps
-  are noise); otherwise `text_blend_interleave` is the final.
+- **`text_order_third.zip` scored 0.5914**: the 0.5958 rule's top two plus the order check from
+  third place on, so no gain from the order check (the bar for replacing was about +0.02).
+- **Final: `text_blend_interleave` (0.5958).**
 - Final build on Colab: done by the team lead at 08:18 (`team/final_text_colab.ipynb`,
   `text_blend_interleave`, rankings identical to the uploaded ZIP). A final with the order check
   would need a new Colab build with SigLIP (`team/export_text_order.py`).

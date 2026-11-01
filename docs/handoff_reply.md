@@ -71,3 +71,9 @@ only reversed style has it first, against those where only centrality does.
 - **Next upload:** `text_order_third.zip` (top two unchanged from `text_blend_interleave`, the order
   check from third place on). Agreed on your bar: replace the final only if it beats 0.5958 by about
   0.02. Otherwise the 08:18 Colab ZIP is the final.
+
+## Update, 10:05
+
+`text_order_third.zip` scored **0.5914**, below 0.5958. The order check adds nothing from third place
+on, so the final is `text_blend_interleave`: your 08:18 Colab ZIP. As you suggested, uploading that
+Colab ZIP once to confirm it scores 0.5958 is the remaining step.
