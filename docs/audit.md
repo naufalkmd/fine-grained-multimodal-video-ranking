@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (10:27 KST)
+## Status at a glance (10:32 KST)
 
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
@@ -27,10 +27,11 @@
   familiarity keeps case and punctuation, which the word-pair score drops. On our sets the two
   correlate 0.52-0.80 and the combined least familiar pick differs in 20-33% of episodes; whether it
   is better can only be read publicly.
-- **Optional, only if a second Colab build can still start by about 11:15:** upload
-  `text_blend_interleave_gated_excess` (the gate also fires when even the best candidate's edit
-  distances don't add up; extends the mechanism that just worked, but fired on 9% of synthetic
-  "correct is the base" sets) or `text_blend_interleave_gated_chars`. Replace the final only at
+- **Optional, only while the final's Colab build is already running and a second build can still
+  start by about 11:15:** upload `text_blend_interleave_gated_excess` first (the gate also fires
+  when even the best candidate's edit distances don't add up; it extends the mechanism that just
+  worked, but fired on 9% of synthetic "correct is the base" sets and on 74% of order-only sets),
+  then `text_blend_interleave_gated_chars` (a smaller expected change). Replace the final only at
   about 0.657 or more.
 - Final build on Colab: done by the team lead at 08:18 (`team/final_text_colab.ipynb`,
   `text_blend_interleave`, rankings identical to the uploaded ZIP). A final with the order check
