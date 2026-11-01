@@ -229,7 +229,7 @@ The public CSVs give the correct text's rank under each rule, so merging rules c
 | Rank sum | 0.5447 | 0.5394 |
 | Take turns, worst case from the CSVs, no simulation | 0.5550 | **0.5639** |
 
-The worst case assumes every place not forced by the two ranks goes against the correct text. If private behaves like public, `text_blend` first beats `text_blend` alone on the private 1,337 episodes with probability 0.88 at the worst case, and above 0.99 at any overlap we simulated. These are estimates: only `text_blend` and the rank sum have public scores.
+The worst case assumes every place not forced by the two ranks goes against the correct text. If private behaves like public, `text_blend` first beats `text_blend` alone on the private 1,337 episodes with probability 0.88 at the worst case, and above 0.99 at any overlap we simulated. These were estimates made before upload. **`text_blend_interleave` then scored 0.5958 publicly,** inside the simulated range.
 
 ### The video deciding between two candidates
 
@@ -259,6 +259,25 @@ A threshold of 3 keeps most of the gain and removes the loss when the frames car
 
 A 4-epoch fine-tune was stopped during its first epoch. At about 2 s per batch on an RTX 5070 with the GPU to itself, an epoch takes about 28 minutes, so a T4 at 2 to 4 times slower couldn't reproduce 4 epochs by the deadline. Two epochs would take about 2 to 4 hours there.
 
+### The order probe and the base-candidate gates
+
+`probe_order` scored 0.4295 (1,969 / 4,584), about 3.5 standard errors above chance. That doesn't show it reads event order: on pure-noise similarities its score falls from -0.125 at 2 events to -0.474 at 8, so it leans toward candidates with fewer events with no video at all. The lean cancels where candidates have the same events, as in order changes, but not elsewhere. A reversed-frames upload would separate order from length. Simulated with a probe independent of the text rules, adding it to `text_blend_interleave` moves the score by -0.009 to +0.005, whichever way it's merged.
+
+`text_order_third` (on `feat/smolvlm-gate`: the text rule's top two, then turns among `text_blend`, unfamiliar wording and the order check) scored **0.5914** publicly, 0.0044 below `text_blend_interleave`. Simulated as written before that score arrived, from the public ranks with the check's mean near 0.4295, it changes the score by -0.003 to +0.001 if the check is independent of the text rules, and by +0.004 to +0.006 if all of its lift falls in the 32% of episodes where their top two miss. With paired noise of about 0.0025, the result fits the first and makes the second unlikely, so the check doesn't appear to complement the text rules where they fail. A perfect check in those places would give +0.034. `docs/audit.md` on that branch finds the same lean locally with the wrong video.
+
+The larger lever is which top pick goes first. Public counts: first under both 77, only `text_blend` 162, only reversed style 125. Centrality's rank spread fits a mix where the correct text is the base in about 15-35% of episodes. Moving the least familiar pick first only where the correct text isn't the base gains +0.016 to +0.081 if a gate catches all of those episodes, and about half that if it catches 70% and wrongly moves 10% of the base episodes. These are estimates from a hypothesis about the test. On synthetic candidates, with shuffled order and random ties:
+
+| Structure | Centrality right | `gate` leaves it alone | Lowest excess under 0.3 |
+|---|---:|---:|---:|
+| Correct is the base, 1-word edits | 0.99 | 1.00 | 1.00 |
+| Correct is the base, mixed edits | 0.94 | 1.00 | 0.91 |
+| Hidden original, 1-word edits | 0.21 | 0.01 | 0.00 |
+| Hidden original, mixed edits | 0.20 | 0.48 | 0.72 |
+| Edits of edits | 0.10 | 1.00 | 0.78 |
+| Order changes only | 0.19 | 1.00 | 0.26 |
+
+`text_blend_interleave_gated` uses `gate` alone, and `text_blend_interleave_gated_excess` also fires at excess 0.3 or more. Neither has a public score yet. `gate` costs nothing on order changes, because it leaves them alone; it acts only where no candidate looks like the base. Local scores can't judge them, because reversed style points the wrong way on our sets (no training, `lexical` falls from 0.711 to 0.496 under both).
+
 ### Audit of our assumptions
 
 Checked on 2026-11-01. Per-episode CSVs were used in aggregate only.
@@ -280,6 +299,8 @@ All from the leaderboard (573 episodes, chance 0.375, gaps under about 0.03 are 
 
 | Submission | Uses the image? | Public |
 |---|---|---:|
+| `text_blend_interleave` | No | **0.5958** |
+| `text_order_third` | From third place on | 0.5914 |
 | `text_blend` | No | 0.5521 |
 | `text_centrality` / `central_submission` | No | 0.5515 |
 | `smolvlm_gate_v1` | Rarely | 0.5502 |
@@ -287,6 +308,7 @@ All from the leaderboard (573 episodes, chance 0.375, gaps under about 0.03 are 
 | `q2_central4` | Slightly | 0.5312 |
 | `fill_central_v1` | Yes | 0.5044 |
 | `siglip_central_v1` (reported without a filename) | Yes | 0.4682 |
+| `probe_order` | Yes, with a text lean | 0.4295 |
 | `q1_central05` | Yes | 0.4068 |
 | `temporal_word_swap_v1` | Yes | 0.3968 |
 | `team/kyounghoon` SigLIP ensemble | Yes | 0.3630 |
@@ -295,7 +317,7 @@ All from the leaderboard (573 episodes, chance 0.375, gaps under about 0.03 are 
 | `temporal_qwen_evidence_v1` | Yes | 0.3370 |
 | `text_style` | No | 0.2411 |
 
-Built and validated with no score reported to us: `text_blend_interleave`, `arbiter_v1`, `text_interleave`, `text_interleave_small`, `unfamiliar_v1`, `fill_v1`, `text_style_flip`, `text_style_central`, `compare_v1`, `siglip_central_3to1`, `text_shortest`, `text_consensus`, `text_meaning`.
+Built and validated with no score reported to us: `text_blend_interleave_gated`, `text_blend_interleave_gated_excess`, `arbiter_v1`, `text_interleave`, `text_interleave_small`, `unfamiliar_v1`, `fill_v1`, `text_style_flip`, `text_style_central`, `compare_v1`, `siglip_central_3to1`, `text_shortest`, `text_consensus`, `text_meaning`.
 
 ## Experiment log
 
@@ -386,6 +408,8 @@ Submission names used by the team:
 | 2026-11-01 04:50 | `text_style_flip_central`: `text_style_flip` + centrality ranks, 1:1. `cuda/text_style_flip_central.zip` | None (counts only) | All types | - | Same unfair counts: `swapped_action` 0.608, `added_action` 0.574, `lexical` 0.502, `qwen` 0.461, `word_swap` 0.438, `similar_episode` 0.426 | **0.5443**, a tie with centrality (0.5515) |
 | 2026-11-01 05:45 | `text_interleave`: centrality's top, then reversed style's top, and so on in turn; rule chosen from public CSV statistics. `cuda/text_interleave.zip` | None (counts only) | All types | - | Checked on 6,778 local rankings: first place always equals centrality's, second is as designed. Local scores aren't informative for this rule | Not uploaded yet; simulated about 0.595 |
 | 2026-11-01 06:37 | `text_interleave_small`: `text_interleave` without the kit's encoders, which it never loads (`team/package_small.py`). `cuda/text_interleave_small.zip`, 0.2 MiB | None (counts only) | All types | - | Same rankings as `text_interleave` on 6,778 local rankings; passes the kit's interface check from another folder in isolated mode | Not uploaded yet |
-| 2026-11-01 07:07 | `text_blend_interleave`: `text_blend`'s top, then reversed style's top, and so on in turn; rule chosen from public CSV statistics. `cuda/text_blend_interleave.zip`, 349 MiB. Word-pair counts match `text_interleave`. Rehearsed through the Colab steps locally | None (counts only) | All types | - | Checked on 6,778 local rankings: first place always equals `text_blend`'s, second is as designed. Local scores aren't informative for this rule | Not uploaded yet; worst case 0.5639, simulated about 0.60 |
+| 2026-11-01 07:07 | `text_blend_interleave`: `text_blend`'s top, then reversed style's top, and so on in turn; rule chosen from public CSV statistics. `cuda/text_blend_interleave.zip`, 349 MiB. Word-pair counts match `text_interleave`. Rehearsed through the Colab steps locally | None (counts only) | All types | - | Checked on 6,778 local rankings: first place always equals `text_blend`'s, second is as designed. Local scores aren't informative for this rule | **0.5958** (573 episodes), uploaded by njunu17, the best so far. Worst case 0.5639, simulated 0.59-0.60. The site showed the mean only, with no per-episode CSV |
+| 2026-11-01 08:18 | `text_blend_interleave`, built on a Colab Tesla T4 with `team/final_text_colab.ipynb`, run `20261031_230904_336fbf`, in `colab_runs/` on Drive. 349.1 MiB, sha256 `d3bbad91...5787`. Kit MLP on 12 episodes, not loaded by the rule | None (counts only) | All types | - | Against `cuda/text_blend_interleave.zip`: same code, word counts and encoder weights; rankings identical on all 6,778 local rankings | Not uploaded yet. It imports `submission_style` during ranking, and crashes in a stricter local load test where the ZIP's folder is importable only while loading. That risk looks unfounded: `feat/smolvlm-gate`, the source of the 0.5958 upload as far as we know, has the same import. The import later moved to load time (`1106017`), which changes no ranking |
+| 2026-11-01 09:35 | `text_blend_interleave_gated`: `text_blend_interleave`, with reversed style's top first when no candidate has all its words in the others. `text_blend_interleave_gated_excess`: also when the lowest word edit-distance excess is 0.3 or more; the threshold comes from synthetic candidates. `cuda/text_blend_interleave_gated.zip` and `cuda/text_blend_interleave_gated_excess.zip`, 349 MiB, about 0.02 s per episode | None (counts only) | All types | - | 150 episodes per set, plain / `gate` / excess: `added_action` 1.000 / 1.000 / 0.950, `swapped_action` 0.980 / 0.974 / 0.960, `similar_episode` 0.486 / 0.463 / 0.463, `lexical` 0.711 / 0.496 / 0.496, `random` 0.405 / 0.377 / 0.377, `reorder` 0.398 / 0.398 / 0.239; `word_swap` 1.000, `mixed` 0.985 and `qwen` 1.000 under all three. Lower is expected where a gate fires, because reversed style points the wrong way locally | Not uploaded yet |
 | 2026-11-01 07:21 | `arbiter_v1`: `text_blend_interleave`, with `smolvlm_ft_v1` putting the second pick first when the frames favour it by more than 3 (8 frames, w = 1). `cuda/arbiter_v1.zip`, 773 MiB. 0.34 s per episode locally | Correct descriptions only | All types | - | 100 episodes per set, text only / right video / wrong video, share overruled right / wrong: `word_swap` 1.000 / 0.995 / 0.995, 0.01 / 0.01; `qwen` 1.000 / 0.985 / 0.980, 0.03 / 0.04; `swapped_action` 0.980 / 0.970 / 0.810, 0.02 / 0.34; `added_action` 1.000 / 0.980 / 0.975, 0.04 / 0.05; `reorder` 0.499 / 0.489 / 0.489, 0.02 / 0.06; `similar_episode` 0.395 / 0.490 / 0.410, 0.37 / 0.33. These sets nearly hand the text rule the answer, so the override can rarely help on them | Not uploaded yet |
 | 2026-11-01 06:11 | `unfamiliar_v1`: least expected wording under `smolvlm_ft_v1` with no frames, on tokens that differ, averaged per token. No images. `cuda/unfamiliar_v1.zip`, 773 MiB. Direction chosen from `text_style`'s public score. About 0.08 s per episode locally | Correct descriptions only | All types | - | 200 episodes per set; low is expected, because local negatives point the other way on this signal: `word_swap` 0.043, `swapped_action` 0.067, `qwen` 0.231, `added_action` 0.272, `lexical` 0.426, `similar_episode` 0.454. Rank correlation with word-pair familiarity reversed: +0.25 to +0.60 | Not uploaded yet |
