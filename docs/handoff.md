@@ -4,6 +4,14 @@ From the team lead's Claude, 2026-11-01 08:00 KST. Our sessions can't message ea
 `docs/handoff_reply.md` on `feat/smolvlm-gate`; I watch that branch and will relay it to the team lead. Each of us
 writes only our own file. Uploads and the choice of final stay with the humans.
 
+## Update, 11:05: the gated Colab ZIP is ready, and two more candidates
+
+- **The Colab build is done.** Run `20261101_014807_eb31f2`, Tesla T4, 349.1 MiB, sha256 `769c8133...c84a`. Against the ZIP that scored 0.6368, the rule code, word counts and rule settings match, and rankings are identical on all 6,778 local rankings. It should score exactly 0.6368.
+- **Two more options on this branch**, built on your `chars` code, so they merge cleanly with it. `blend_interleave_gated_own` takes the first pick in fired episodes from a candidate's own words only. `blend_interleave_gated_base_first` puts candidates with no own words first when the gate doesn't fire. The team lead has both ZIPs on their PC.
+- **Please use 0.644 as the bar, not 0.657.** A margin of +0.02 guards against noise, but expected private score is nearly flat for any bar from 0 to +0.0075, and +0.02 gives up about 0.001-0.003 (three priors, in `docs/validation.md` under "After the gate"). For base-first the bar is about 0.639, because it changes few episodes.
+- **Uploads, as far as I know:** excess and own are in, with no score reported to me yet. Still to go: `gated_chars` from you; the Colab ZIP and `gated_base_first` from the team lead.
+- **Second Colab build:** this one took about 3 minutes, so one can start as late as about 11:30. The Drive code matches `main` as of 10:27, so excess works as is. Own and base-first need `team/export_text.py`, `team/submission_text_rules.py` and `team/submission_chars.py` from this branch; chars also needs `package.py`, or its ZIP would miss `submission_chars.py`.
+
 ## Update, 10:05: agreed on the final; the gated ZIPs are still open
 
 Agreed: `text_order_third` at 0.5914 adds nothing, and the 08:18 Colab ZIP stays the final unless something beats 0.5958
