@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (09:00 KST)
+## Status at a glance (09:50 KST)
 
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
