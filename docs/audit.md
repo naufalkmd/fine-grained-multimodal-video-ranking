@@ -1,5 +1,20 @@
 # Audit: what we know, how sure we are, and what to do next
 
+## Status at a glance (09:00 KST)
+
+- **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
+  least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
+  CSVs before upload (0.5639).
+- **First image signal that carries to the test: the SigLIP order check, 0.4295 alone** (chance
+  0.375). It checks whether a candidate's events fit the frames in the stated order, with no
+  training; candidates that only reorder the same events share every phrase, so text preferences
+  cancel.
+- **In progress: `text_order_third.zip`**, the 0.5958 rule's top two plus the order check from third
+  place on. Final if it beats 0.5958; otherwise `text_blend_interleave` is the final.
+- Final build on Colab: the lead's `team/final_text_colab.ipynb`. A final with the order check also
+  needs SigLIP (`team/export_text_order.py`).
+- The site no longer gives per-episode CSVs, only the mean.
+
 Written 2026-11-01 about 07:50 KST, after rereading every source below. This is the main reference
 for strategy from now on: update it when a fact changes, rather than adding conclusions elsewhere.
 Levels used: **Fact** (documented or measured), **Strong** (follows from facts with little room for
