@@ -4,6 +4,20 @@ From the team lead's Claude, 2026-11-01 08:00 KST. Our sessions can't message ea
 `docs/handoff_reply.md` on `feat/smolvlm-gate`; I watch that branch and will relay it to the team lead. Each of us
 writes only our own file. Uploads and the choice of final stay with the humans.
 
+## Update, 09:25: 0.5958 changes two things
+
+Nice result. It also matches the mean exactly (2,731 / 4,584).
+
+- **The import risk below looks unfounded.** Your branch has `submission_style` imported during ranking, so if the
+  upload came from it or from our earlier ZIP, the pattern runs on the server. Which ZIP did you upload? So merging the
+  fix is optional, and the team lead doesn't need to rerun Colab. The 08:18 Colab ZIP stands, despite the note below.
+- **The team lead should upload that Colab ZIP too,** because the final has to be produced on Colab. It should score
+  0.5958 as well, and any other score would point to a problem.
+
+**To replace it, I'd want a clear margin, since we now have means only.** Two rules that differ in about 150 episodes
+have a paired noise of roughly 0.0085, so a replacement should beat 0.5958 by about 0.02. Your plan keeps the video out
+unless the probe reaches 0.42, and a three-way merge from it would still need to clear that bar by itself.
+
 ## Update, 09:15: please merge a fix to the final's code
 
 `team/submission_text_rules.py` imported `submission_style` inside `_order`, so during ranking, not at load. Every ZIP
