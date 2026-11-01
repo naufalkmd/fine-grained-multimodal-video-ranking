@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (10:20 KST)
+## Status at a glance (10:27 KST)
 
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
@@ -12,8 +12,10 @@
   can't separate the two.
 - **`text_order_third.zip` scored 0.5914**: the 0.5958 rule's top two plus the order check from
   third place on, so no gain from the order check (the bar for replacing was about +0.02).
-- **Final so far: `text_blend_interleave` (0.5958).**
-- **Next upload: `text_blend_interleave_gated`.** It differs only in putting reversed style's pick
+- **Final: `text_blend_interleave_gated`, public 0.6368**, +0.041 over `text_blend_interleave`
+  (0.5958) and above the +0.02 bar. Build it on Colab with `METHOD = "blend_interleave_gated"` in
+  `team/final_text_colab.ipynb`.
+- **`text_blend_interleave_gated` (uploaded, 0.6368).** It differs only in putting reversed style's pick
   first when no candidate has all its words in the others (no candidate looks like the base). It
   can't act where the correct text is the base, which is where `text_blend` wins, so its downside is
   small; public counts cap its gain at +0.109 (125 episodes only reversed style gets right). Earlier
@@ -24,8 +26,12 @@
   (`blend_interleave_chars`, `blend_interleave_gated_chars`; `team/submission_chars.py`). Character
   familiarity keeps case and punctuation, which the word-pair score drops. On our sets the two
   correlate 0.52-0.80 and the combined least familiar pick differs in 20-33% of episodes; whether it
-  is better can only be read publicly. Upload the gated one if the gate wins, the plain one if not,
-  and only if time allows a Colab rebuild by about 11:00.
+  is better can only be read publicly.
+- **Optional, only if a second Colab build can still start by about 11:15:** upload
+  `text_blend_interleave_gated_excess` (the gate also fires when even the best candidate's edit
+  distances don't add up; extends the mechanism that just worked, but fired on 9% of synthetic
+  "correct is the base" sets) or `text_blend_interleave_gated_chars`. Replace the final only at
+  about 0.657 or more.
 - Final build on Colab: done by the team lead at 08:18 (`team/final_text_colab.ipynb`,
   `text_blend_interleave`, rankings identical to the uploaded ZIP). A final with the order check
   would need a new Colab build with SigLIP (`team/export_text_order.py`).

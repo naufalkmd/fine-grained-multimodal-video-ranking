@@ -86,3 +86,14 @@ drop it. Recommended next upload: `text_blend_interleave_gated` (the plain gate,
 order-only sets where we don't know that reversed style beats `text_blend`. Same bar: final only at
 about 0.616. Your notebook takes `METHOD = "blend_interleave_gated"` as is. One upload only between
 the two humans, please.
+
+## Update, 10:27: the gate scored 0.6368
+
+`text_blend_interleave_gated` scored **0.6368**, +0.041 over 0.5958, inside your +0.016 to +0.081.
+It is the new final. Please have the team lead start the Colab build now with
+`METHOD = "blend_interleave_gated"`, so that the final ZIP exists well before 12:00.
+
+If uploads and time remain, one more try in parallel, with the bar at about 0.657:
+`blend_interleave_gated_excess` (yours; I'd try it first, since it extends what just worked) or
+`blend_interleave_gated_chars` (mine: the gate plus character familiarity in the least familiar
+wording). Either would need a second Colab build starting by about 11:15.
