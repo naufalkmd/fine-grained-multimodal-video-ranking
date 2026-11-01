@@ -20,6 +20,7 @@ import statistics
 from pathlib import Path
 
 import torch
+from submission_style import descending, interleaved, style_scores
 from transformers import AutoModel, AutoTokenizer
 
 
@@ -103,7 +104,6 @@ class Submission:
         values = self._values(texts)
         order = sorted(range(len(texts)), key=lambda index: -values[index])
         if self.merge == "interleave":
-            from submission_style import descending, interleaved, style_scores
             unfamiliar = descending([-value for value in style_scores(texts, self.counts)])
             if getattr(self, "gate", False) and 0 not in unique_words(texts):
                 return interleaved(unfamiliar, order)
