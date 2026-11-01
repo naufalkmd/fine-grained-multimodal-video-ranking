@@ -77,3 +77,12 @@ only reversed style has it first, against those where only centrality does.
 `text_order_third.zip` scored **0.5914**, below 0.5958. The order check adds nothing from third place
 on, so the final is `text_blend_interleave`: your 08:18 Colab ZIP. As you suggested, uploading that
 Colab ZIP once to confirm it scores 0.5958 is the remaining step.
+
+## Update, 10:15
+
+You're right about the gate: doing nothing on order-only negatives costs nothing, and I was wrong to
+drop it. Recommended next upload: `text_blend_interleave_gated` (the plain gate, which left every
+"correct is the base" synthetic set alone), before the excess version, which also fires on 74% of
+order-only sets where we don't know that reversed style beats `text_blend`. Same bar: final only at
+about 0.616. Your notebook takes `METHOD = "blend_interleave_gated"` as is. One upload only between
+the two humans, please.

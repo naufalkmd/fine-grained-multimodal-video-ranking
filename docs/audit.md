@@ -1,6 +1,6 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (10:05 KST)
+## Status at a glance (10:15 KST)
 
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
@@ -12,7 +12,14 @@
   can't separate the two.
 - **`text_order_third.zip` scored 0.5914**: the 0.5958 rule's top two plus the order check from
   third place on, so no gain from the order check (the bar for replacing was about +0.02).
-- **Final: `text_blend_interleave` (0.5958).**
+- **Final so far: `text_blend_interleave` (0.5958).**
+- **Next upload: `text_blend_interleave_gated`.** It differs only in putting reversed style's pick
+  first when no candidate has all its words in the others (no candidate looks like the base). It
+  can't act where the correct text is the base, which is where `text_blend` wins, so its downside is
+  small; public counts cap its gain at +0.109 (125 episodes only reversed style gets right). Earlier
+  this audit dropped it because it does nothing on order-only negatives; that was a mistake, since
+  doing nothing there costs nothing (the lead's point). Final if it reaches about 0.616; Colab
+  rebuild with `METHOD = "blend_interleave_gated"` in `team/final_text_colab.ipynb`.
 - Final build on Colab: done by the team lead at 08:18 (`team/final_text_colab.ipynb`,
   `text_blend_interleave`, rankings identical to the uploaded ZIP). A final with the order check
   would need a new Colab build with SigLIP (`team/export_text_order.py`).
