@@ -5,14 +5,17 @@
 - **Best public: `text_blend_interleave`, 0.5958.** Text only: `text_blend`'s top pick, then the
   least familiar wording's top pick, in turn. Its worst case was checked exactly from the public
   CSVs before upload (0.5639).
-- **First image signal that carries to the test: the SigLIP order check, 0.4295 alone** (chance
-  0.375). It checks whether a candidate's events fit the frames in the stated order, with no
-  training; candidates that only reorder the same events share every phrase, so text preferences
-  cancel.
+- **The SigLIP order check scored 0.4295 alone** (chance 0.375), but this is **not clean evidence of
+  an image signal**: locally, with another episode's video, it still favours candidates with fewer
+  events (correlation -0.15 to -0.31; `added_action` 0.486 with the wrong video). Only on
+  same-length reorderings is the image part clear (0.470 right vs 0.376 wrong). The public mean
+  can't separate the two.
 - **In progress: `text_order_third.zip`**, the 0.5958 rule's top two plus the order check from third
-  place on. Final if it beats 0.5958; otherwise `text_blend_interleave` is the final.
-- Final build on Colab: the lead's `team/final_text_colab.ipynb`. A final with the order check also
-  needs SigLIP (`team/export_text_order.py`).
+  place on. Replace the final only if it beats 0.5958 by about 0.02 (means only, so smaller gaps
+  are noise); otherwise `text_blend_interleave` is the final.
+- Final build on Colab: done by the team lead at 08:18 (`team/final_text_colab.ipynb`,
+  `text_blend_interleave`, rankings identical to the uploaded ZIP). A final with the order check
+  would need a new Colab build with SigLIP (`team/export_text_order.py`).
 - The site no longer gives per-episode CSVs, only the mean.
 
 Written 2026-11-01 about 07:50 KST, after rereading every source below. This is the main reference
@@ -174,8 +177,9 @@ within noise, so the untrained check is kept.
 
 1. **`text_blend_interleave` is the final unless something beats 0.5958.**
 2. The order check alone (`probe_order.zip`) scored **0.4295 publicly**, about three standard errors
-   above chance: the first image method to carry information to the test. It is weaker alone than
-   either text signal (0.55, 0.53), so it shouldn't decide first place. Next upload:
+   above chance. Part of that may be structure rather than the frames: it favours candidates with
+   fewer events even with the wrong video (see Status). It is weaker alone than either text signal
+   (0.55, 0.53), so it shouldn't decide first place. Next upload:
    `text_order_third.zip` (`team/submission_text_order.py`, `order_merge` "third"), which keeps
    `text_blend_interleave`'s top two and lets the order check fill places from third on. Expected
    gain is small (+0.005 to +0.02); final if it beats 0.5958. `text_blend_interleave_gated` is

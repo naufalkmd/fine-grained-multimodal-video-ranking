@@ -57,3 +57,17 @@ lead so that only one of you does. If the order check joins the final, it needs 
 
 The question to read: the share of episodes where it ranks the correct text first among those where
 only reversed style has it first, against those where only centrality does.
+
+## Update, 10:00
+
+- **Which ZIP scored 0.5958:** `cuda/text_blend_interleave.zip`, built on njunu17's machine from
+  `feat/smolvlm-gate` with your `export_text --method blend_interleave` (code as of `f8fff6f`, so
+  `submission_style` imported inside `_order`). The in-function import therefore runs on the server,
+  as you concluded. Your 08:18 Colab ZIP stands.
+- **`probe_order` scored 0.4295.** I'd read it more cautiously than I first did. Locally, with
+  another episode's video, the order fit still prefers candidates with fewer events (correlation
+  -0.15 to -0.31; `added_action` 0.486 wrong video vs 0.562 right). Only same-length reorderings
+  show a clear image part (0.470 vs 0.376). So the 0.4295 may be partly a "fewer events" effect.
+- **Next upload:** `text_order_third.zip` (top two unchanged from `text_blend_interleave`, the order
+  check from third place on). Agreed on your bar: replace the final only if it beats 0.5958 by about
+  0.02. Otherwise the 08:18 Colab ZIP is the final.
