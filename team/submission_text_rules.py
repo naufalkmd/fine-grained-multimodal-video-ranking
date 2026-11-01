@@ -13,8 +13,9 @@ candidate looks like the one the others were edited from: no candidate has all i
 `gate_excess` set, even the best candidate's word edit distances to the others don't add up (`lowest_excess`). With
 `chars` true, the least familiar wording averages, within the episode, standardized word-pair familiarity and
 character familiarity (team/submission_chars.py, case and punctuation kept). When the gate fires, `gate_own_words` takes
-the first list from a candidate's own words only (`own_word_scores`); otherwise, `gate_base_first` moves the candidates
-with no own words to the front. No state is kept between episodes.
+the first list from a candidate's own words only (`own_word_scores`), and `gate_mean` from the within-episode mean of that and
+the least familiar wording; otherwise, `gate_base_first` moves the candidates with no own words to the front. No state is
+kept between episodes.
 """
 
 import difflib
@@ -143,6 +144,7 @@ class Submission:
         self.gate = config.get("gate", False)
         self.gate_excess = config.get("gate_excess")
         self.gate_own_words = config.get("gate_own_words", False)
+        self.gate_mean = config.get("gate_mean", False)
         self.gate_base_first = config.get("gate_base_first", False)
         if self.merge == "interleave":
             self.counts = json.loads((root / "models/style/counts.json").read_text(encoding="utf-8"))
@@ -200,8 +202,11 @@ class Submission:
         if self.merge == "interleave":
             unfamiliar = descending(self._unfamiliar(texts))
             if self._no_base_candidate(texts):
-                if getattr(self, "gate_own_words", False):
-                    unfamiliar = descending([-value for value in own_word_scores(texts, self.counts)])
+                own = [-value for value in own_word_scores(texts, self.counts)]
+                if getattr(self, "gate_mean", False):
+                    unfamiliar = descending([a + b for a, b in zip(standardized(self._unfamiliar(texts)), standardized(own))])
+                elif getattr(self, "gate_own_words", False):
+                    unfamiliar = descending(own)
                 return interleaved(unfamiliar, order)
             if getattr(self, "gate_base_first", False):
                 own = unique_words(texts)

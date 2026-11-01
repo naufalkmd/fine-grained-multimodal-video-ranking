@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "team"))
 
 from submission_style import build_counts, descending, interleaved, style_scores
 from submission_text_rules import (Submission, consensus_scores, lowest_excess, own_word_scores, ranks, sequence_scores,
-                                   unique_words)
+                                   standardized, unique_words)
 
 EDITS = ["he buttons his shirt", "he unbuttons his shirt", "he buttons his shirt and sits",
          "he buttons his jacket", "he buttons his shirt slowly"]
@@ -120,6 +120,22 @@ def test_own_words_change_nothing_when_the_gate_does_not_fire():
     submission = gated_submission()
     plain = submission._order(FROM_BASE)
     submission.gate_own_words = True
+    assert submission._order(FROM_BASE) == plain
+
+
+def test_a_fired_gate_can_average_both_measures():
+    submission = gated_submission()
+    submission.gate_mean = True
+    whole = [-value for value in style_scores(FROM_HIDDEN, submission.counts)]
+    own = [-value for value in own_word_scores(FROM_HIDDEN, submission.counts)]
+    mean = [a + b for a, b in zip(standardized(whole), standardized(own))]
+    assert submission._order(FROM_HIDDEN)[0] == descending(mean)[0]
+
+
+def test_the_mean_changes_nothing_when_the_gate_does_not_fire():
+    submission = gated_submission()
+    plain = submission._order(FROM_BASE)
+    submission.gate_mean = True
     assert submission._order(FROM_BASE) == plain
 
 
