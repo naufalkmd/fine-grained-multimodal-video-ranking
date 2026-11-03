@@ -34,7 +34,15 @@ SELECTION_SETS = ("lexical", "similar_episode")
 
 
 @torch.inference_mode()
-def encode_frames(encoders, episode):
+def frame_tokens(hidden, grid):
+    """Each frame's CLS feature followed by its patch features pooled to a grid x grid layout."""
+    side = round((hidden.size(1) - 1) ** 0.5)
+    patches = hidden[:, 1:].transpose(1, 2).reshape(len(hidden), hidden.size(2), side, side)
+    pooled = nn.functional.adaptive_avg_pool2d(patches.float(), grid).to(hidden.dtype)
+    return torch.cat([hidden[:, :1], pooled.flatten(2).transpose(1, 2)], dim=1)
+
+
+def encode_frames(encoders, episode, patch_grid=0):
     """One float16 CLS feature per frame, matching what CUDA inference computes."""
     images = load_images(episode)
     try:
@@ -43,14 +51,18 @@ def encode_frames(encoders, episode):
             inputs = encoders.image_processor(
                 images=images[start:start + encoders.image_batch_size], return_tensors="pt")
             pixels = inputs["pixel_values"].to(encoders.device, dtype=encoders.dtype)
-            features.append(encoders.image_model(pixel_values=pixels).last_hidden_state[:, 0].cpu())
+            hidden = encoders.image_model(pixel_values=pixels).last_hidden_state
+            if patch_grid:
+                features.append(frame_tokens(hidden, patch_grid).cpu())
+            else:
+                features.append(hidden[:, 0].cpu())
     finally:
         for image in images:
             image.close()
     return torch.cat(features).half()
 
 
-def load_frame_features(path, episodes, encoders):
+def load_frame_features(path, episodes, encoders, patch_grid=0):
     path = Path(path)
     if path.exists():
         cached = torch.load(path, map_location="cpu", weights_only=True)
@@ -61,7 +73,7 @@ def load_frame_features(path, episodes, encoders):
         return cached
     cached = {}
     for index, episode in enumerate(episodes):
-        cached[episode.episode_id] = encode_frames(encoders, episode)
+        cached[episode.episode_id] = encode_frames(encoders, episode, patch_grid)
         if (index + 1) % 200 == 0 or index + 1 == len(episodes):
             print(f"Encoded frames: {index + 1}/{len(episodes)} episodes", flush=True)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +91,7 @@ def encode_tokens(encoders, texts):
 
 def collate_frames(features, device):
     lengths = [len(item) for item in features]
-    frames = torch.zeros(len(features), max(lengths), features[0].size(-1), device=device)
+    frames = torch.zeros(len(features), max(lengths), *features[0].shape[1:], device=device)
     mask = torch.zeros(len(features), max(lengths), dtype=torch.bool, device=device)
     for index, item in enumerate(features):
         frames[index, :len(item)] = item.to(device).float()
@@ -338,6 +350,8 @@ def main():
     parser.add_argument("--seed", type=int, help="Overrides the config's seed for repeat runs.")
     parser.add_argument("--flip-probability", type=float, default=0.0,
                         help="Share of episodes trained with frames and text reversed together.")
+    parser.add_argument("--patch-grid", type=int, default=0,
+                        help="Temporal model only: also give cross-attention N x N patch features per frame.")
     parser.add_argument("--video-contrast-weight", type=float, default=0.0,
                         help="Weight of also finding each correct text's video among the batch's videos.")
     parser.add_argument("--save-negatives", action="store_true",
@@ -393,8 +407,9 @@ def main():
     encoders = FrozenEncoders(config["image_model_dir"], config["text_model_dir"], device,
                               config["image_batch_size"], config["text_batch_size"],
                               config["max_text_length"])
-    frames_by_episode = load_frame_features(args.frame_cache or workspace / "frames/features.pt",
-                                            list(episodes.values()), encoders)
+    default_cache = f"frames_grid{args.patch_grid}/features.pt" if args.patch_grid else "frames/features.pt"
+    frames_by_episode = load_frame_features(args.frame_cache or workspace / default_cache,
+                                            list(episodes.values()), encoders, args.patch_grid)
     generator = NegativeGenerator([e.description for e in train],
                                   [load_action_labels(e) for e in train])
     qwen = (load_qwen_records(args.qwen_candidates, {e.episode_id for e in train})
@@ -402,6 +417,8 @@ def main():
     model_config = {"hidden_dim": config["hidden_dim"], "dropout": config["dropout"]}
     if args.model == "temporal":
         model_config["cross_attention"] = not args.no_cross_attention
+        if args.patch_grid:
+            model_config["patch_grid"] = args.patch_grid
     model = MODELS[args.model](**model_config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate,
                                   weight_decay=args.weight_decay)

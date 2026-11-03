@@ -43,9 +43,13 @@ class TemporalRanker(nn.Module):
     TIME_FREQUENCIES = 8
 
     def __init__(self, image_dim=768, text_dim=768, hidden_dim=256, heads=4,
-                 video_layers=2, cross_layers=2, dropout=0.1, cross_attention=True):
+                 video_layers=2, cross_layers=2, dropout=0.1, cross_attention=True, patch_grid=0):
         super().__init__()
         self.cross_attention = cross_attention
+        self.patch_grid = patch_grid
+        if patch_grid:
+            self.patch_projection = nn.Sequential(nn.Linear(image_dim, hidden_dim), nn.LayerNorm(hidden_dim))
+            self.patch_position = nn.Parameter(torch.zeros(patch_grid * patch_grid, hidden_dim))
         self.frame_projection = nn.Sequential(nn.Linear(image_dim, hidden_dim), nn.LayerNorm(hidden_dim))
         self.token_projection = nn.Sequential(nn.Linear(text_dim, hidden_dim), nn.LayerNorm(hidden_dim))
         self.time_projection = nn.Linear(2 * self.TIME_FREQUENCIES, hidden_dim)
@@ -76,15 +80,28 @@ class TemporalRanker(nn.Module):
         return torch.cat([angles.sin(), angles.cos()], dim=-1)
 
     def logits(self, frames, frame_mask, tokens, token_mask, candidates):
-        video = self.frame_projection(frames) + self.time_projection(self.time_features(frame_mask))
+        patches = None
+        if self.patch_grid:
+            frames, patches = frames[:, :, 0], frames[:, :, 1:]
+        time = self.time_projection(self.time_features(frame_mask))
+        video = self.frame_projection(frames) + time
         video = self.video_encoder(video, src_key_padding_mask=~frame_mask)
         # Encode each episode's video once, then share it between that episode's candidates.
         memory = video.repeat_interleave(candidates, dim=0)
         memory_mask = frame_mask.repeat_interleave(candidates, dim=0)
+        if patches is not None:
+            detail = self.patch_projection(patches) + self.patch_position + time.unsqueeze(2)
+            detail_mask = frame_mask.unsqueeze(2).expand(-1, -1, patches.size(2))
+            detail = detail.flatten(1, 2).repeat_interleave(candidates, dim=0)
+            detail_mask = detail_mask.flatten(1, 2).repeat_interleave(candidates, dim=0)
+            attention_memory = torch.cat([memory, detail], dim=1)
+            attention_mask = torch.cat([memory_mask, detail_mask], dim=1)
+        else:
+            attention_memory, attention_mask = memory, memory_mask
         text = self.token_projection(tokens)
         if self.cross_attention:
-            text = self.cross_decoder(text, memory, tgt_key_padding_mask=~token_mask,
-                                      memory_key_padding_mask=~memory_mask)
+            text = self.cross_decoder(text, attention_memory, tgt_key_padding_mask=~token_mask,
+                                      memory_key_padding_mask=~attention_mask)
             weights = self.token_attention(text).masked_fill(~token_mask.unsqueeze(-1), -1e4).softmax(dim=1)
             pooled_text = (weights * text).sum(dim=1)
         else:

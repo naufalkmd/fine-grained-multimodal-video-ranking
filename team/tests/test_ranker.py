@@ -302,3 +302,40 @@ def test_video_contrast_ignores_a_preference_for_text_alone():
     mask = torch.ones(3, 1, dtype=torch.bool)
     loss = video_contrast_loss(TextOnly(), frames, mask, tokens, mask, torch.arange(3), 3)
     assert abs(loss.item() - torch.log(torch.tensor(3.0)).item()) < 1e-5
+
+
+def patch_inputs(frames=3, episodes=1, candidates=5, tokens_per_frame=5):
+    torch.manual_seed(0)
+    video = torch.randn(episodes, frames, tokens_per_frame, 768)
+    tokens = torch.randn(episodes * candidates, 9, 768)
+    return (video, torch.ones(episodes, frames, dtype=torch.bool), tokens,
+            torch.ones(episodes * candidates, 9, dtype=torch.bool), candidates)
+
+
+def test_patch_grid_uses_detail_ignores_padding_and_frame_order_counts():
+    model = TemporalRanker(hidden_dim=32, dropout=0.0, patch_grid=2).eval()
+    frames, frame_mask, tokens, token_mask, candidates = patch_inputs()
+    expected = model.logits(frames, frame_mask, tokens, token_mask, candidates)
+    assert expected.shape == (1, 5)
+    changed = frames.clone()
+    changed[:, :, 1:] = torch.randn_like(changed[:, :, 1:])
+    assert not torch.allclose(expected, model.logits(changed, frame_mask, tokens, token_mask, candidates))
+    padded = torch.cat([frames, torch.full((1, 2, 5, 768), 9.0)], dim=1)
+    padded_mask = torch.cat([frame_mask, torch.zeros(1, 2, dtype=torch.bool)], dim=1)
+    assert torch.allclose(expected, model.logits(padded, padded_mask, tokens, token_mask, candidates), atol=1e-4)
+    assert not torch.allclose(expected, model.logits(frames.flip(1), frame_mask, tokens, token_mask, candidates))
+
+
+def test_frame_tokens_keep_cls_first_and_pool_patches():
+    from team.train_ranker import frame_tokens
+
+    hidden = torch.randn(2, 1 + 16 * 16, 8)
+    tokens = frame_tokens(hidden, 4)
+    assert tokens.shape == (2, 17, 8)
+    assert torch.equal(tokens[:, 0], hidden[:, 0])
+    assert torch.allclose(tokens[0, 1], hidden[0, [1 + r * 16 + c for r in range(4) for c in range(4)]].mean(dim=0), atol=1e-5)
+
+
+def test_collate_keeps_extra_token_dimension():
+    frames, mask = collate_frames([torch.ones(2, 3, 4).half(), torch.ones(1, 3, 4).half()], "cpu")
+    assert frames.shape == (2, 2, 3, 4) and mask.tolist() == [[True, True], [True, False]]
