@@ -96,7 +96,7 @@ It runs in about 0.02 s per episode. Code: `team/submission_text_rules.py` and `
 ├── tests/                 the kit's tests
 ├── team/                  our code (run with python -m team.<module> from the root); index in team/README.md
 │   ├── tests/             tests for our code
-│   └── kyounghoon/        SigLIP training and the three-seed ensemble
+│   └── siglip_ensemble/   SigLIP training and the three-seed ensemble
 ├── notebooks/             Colab notebooks: the organizers' and our two final-build notebooks
 ├── docs/
 │   ├── starterkit/        the kit's docs in English, Korean originals in ko/
@@ -126,8 +126,10 @@ The competition data is the organizers' and is not included. With it in Google D
 2. In section 2, set `METHOD = "blend_interleave_gated_own"` (the final rule), then run all cells. The notebook
    downloads the permitted models, builds the submission ZIP (about 349 MiB) and records the run.
 
-Locally (Python 3.11): `pip install -r requirements.txt`, `python download_models.py`, then the export
-scripts in `team/` (see [team/README.md](team/README.md)).
+Locally, on an NVIDIA GPU: set up the evaluation environment from [cuda/README.md](cuda/README.md)
+(`cuda/requirements-eval.txt`, the package versions the organizers' server used), then run the export
+scripts in `team/` (see [team/README.md](team/README.md)). The root `requirements.txt` is the kit's
+original list (Python 3.11, torch 2.5.1) and lacks packages our code needs, such as scikit-learn.
 
 ## Team
 
@@ -136,7 +138,7 @@ scripts in `team/` (see [team/README.md](team/README.md)).
 - 노준우 ([@njunu17](https://github.com/njunu17)): the first text rules (centrality, familiarity), SmolVLM
   experiments, the event-order check, merge bounds, the audit and the validation log
 - 한경훈 ([@opolo17](https://github.com/opolo17)): SigLIP training and the three-seed SigLIP ensemble
-  (`team/kyounghoon/`)
+  (`team/siglip_ensemble/`)
 - 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`team/exp6_submission.py`)
 
 The baseline code at the repository root is the organizers' starter kit; commit `a9a4179` is the kit as we

@@ -18,7 +18,7 @@ removed from the current tree after the competition so that clones stay small. I
 in the history at commit `1cd0063`: download it from
 [its file page at that commit](https://github.com/naufalkmd/fine-grained-multimodal-video-ranking/blob/1cd0063/team/kyounghoon/siglip_minimal_3seed_submission.zip),
 or run `git checkout 1cd0063 -- team/kyounghoon/siglip_minimal_3seed_submission.zip`
-followed by `git lfs pull`. Do not submit the small LFS pointer text file or the
+followed by `git lfs pull` (it lands at its old path, `team/kyounghoon/`). Do not submit the small LFS pointer text file or the
 repository's source archive.
 
 SHA256:

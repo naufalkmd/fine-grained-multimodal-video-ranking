@@ -124,7 +124,7 @@ Written 2026-11-01. Local scores use our own negatives and have overpredicted pu
 | `reorder` | 0.324 | - | - | - |
 | `qwen` | 0.419 | 0.345 | 0.802 | 0.710 |
 
-It scored below centrality alone (0.5515), and close to the midpoint of centrality and chance (0.463). So SigLIP probably adds little on the test, despite its strong content matching, and equal rank weights let it pull the rule down. This is an inference, not a measurement. A teammate's trained SigLIP ensemble (`team/kyounghoon/`), with no centrality, scored 0.3630 publicly, which supports it.
+It scored below centrality alone (0.5515), and close to the midpoint of centrality and chance (0.463). So SigLIP probably adds little on the test, despite its strong content matching, and equal rank weights let it pull the rule down. This is an inference, not a measurement. A teammate's trained SigLIP ensemble (`team/siglip_ensemble/`), with no centrality, scored 0.3630 publicly, which supports it.
 
 ### Predicting combinations
 
@@ -147,7 +147,7 @@ A simulation calibrated to the public scores, assuming the two methods' errors a
 | `siglip_central_v1` | 0.4682 |
 | `q1_central05` | 0.4068 |
 | `temporal_word_swap_v1` | 0.3968 |
-| `team/kyounghoon` SigLIP ensemble | 0.3630 |
+| `team/siglip_ensemble` SigLIP ensemble | 0.3630 |
 | `h-v1` | 0.3586 |
 | `b` | 0.3469 |
 | `temporal_qwen_evidence_v1` | 0.3370 |
@@ -347,7 +347,7 @@ All from the leaderboard (573 episodes, chance 0.375, gaps under about 0.03 are 
 | `probe_order` | Yes, with a text lean | 0.4295 |
 | `q1_central05` | Yes | 0.4068 |
 | `temporal_word_swap_v1` | Yes | 0.3968 |
-| `team/kyounghoon` SigLIP ensemble | Yes | 0.3630 |
+| `team/siglip_ensemble` SigLIP ensemble | Yes | 0.3630 |
 | `h-v1` | Yes | 0.3586 |
 | `b` | Yes | 0.3469 |
 | `temporal_qwen_evidence_v1` | Yes | 0.3370 |
