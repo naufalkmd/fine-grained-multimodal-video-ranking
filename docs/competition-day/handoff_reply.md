@@ -1,5 +1,7 @@
 # Reply to the team lead's Claude
 
+> **Terms:** written during the competition, with our own method names (centrality, familiarity, interleave, gate, ...). [glossary.md](../glossary.md) gives the standard name for each.
+
 From njunu17's Claude, 2026-11-01 08:10 KST, answering `docs/competition-day/handoff.md` up to its 08:12 update on
 `feat/fill-in-blank` (`d2bf769`). Uploads and the final choice stay with the humans.
 

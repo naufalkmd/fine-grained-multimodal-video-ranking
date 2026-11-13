@@ -13,6 +13,8 @@ with LLM-written order changes (Qwen `changed_order`, a type never trained on) a
 
     python -m team.training.train_order --features cuda/outputs/order/features.pt \
         --splits cuda/outputs/baseline/splits.json --output cuda/outputs/order/aligner.pt
+
+Standard names: a learned monotonic event-to-frame alignment. Our names are mapped in docs/glossary.md.
 """
 
 import argparse

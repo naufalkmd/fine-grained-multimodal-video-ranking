@@ -42,40 +42,48 @@ correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning
    the video cannot see the edit.
 3. **Every image signal that changed the text ranking lost.** Trained video rankers, SigLIP ensembles and
    a fine-tuned SmolVLM all scored at or below the text-only rules. The one image method with a real
-   order signal, a training-free check that a candidate's events match the frames in their stated order
-   (SigLIP per event, dynamic programming over frames), scored 0.4295 alone, above chance, but added
-   nothing when combined.
-4. **The candidates' text carries signal of its own.** Two text-only scores worked, and they were
-   uncorrelated per episode:
-   - **Centrality:** the candidate most similar to the other four comes first. If the wrong
-     candidates are edits of the correct one, the correct one is the text they share.
-   - **Reversed familiarity:** the candidate whose wording is *least* like the training descriptions comes
-     first (a word-bigram model fitted on the training text). Ranking the most familiar first scored
-     0.2411, far below chance, so the direction itself is a measured fact; its cause is not known.
+   order signal, a training-free **monotonic alignment** of a candidate's events to the frames (SigLIP
+   per event, dynamic programming over frames, as in dynamic time warping), scored 0.4295 alone, above
+   chance, but added nothing when combined.
+4. **The test candidates contain annotation artifacts.** Text-only rules, which never see the video, beat
+   chance by a wide margin: a **hypothesis-only baseline** in the sense of Gururangan et al. (2018) and
+   Poliak et al. (2018). Two such scores worked, and they were uncorrelated per episode:
+   - **Medoid / minimum Bayes risk (MBR) selection** (our *centrality*): the candidate most similar to the
+     other four comes first. If the wrong candidates are edits of the correct one, the correct one is
+     the consensus of the set.
+   - **Lowest n-gram language-model likelihood first** (our *reversed familiarity*): the candidate whose
+     wording is *least* likely under a word-bigram model fitted on the training descriptions comes
+     first. Ranking the most likely first scored 0.2411, far below chance, so the direction itself is a
+     measured fact; its cause is not known.
 
-   Taking turns between the two rankings, and a gate that decides which goes first, gave the final rule.
-5. **Bounds before uploads.** With 30 leaderboard checks, we computed the worst case of a merge exactly from
-   the per-episode public results before uploading it (`team/evaluation/merge_bounds.py`): taking turns could not score
-   below 0.5639, and it scored 0.5958.
+   **Round-robin rank fusion** of the two rankings, with a **rule-based switch** that decides which goes
+   first, gave the final rule.
+5. **Worst-case bounds before uploads.** With 30 leaderboard checks, we computed the worst case of a rank
+   fusion exactly, by enumerating every placement of the unseen wrong candidates in the per-episode
+   public results (`team/evaluation/merge_bounds.py`): round-robin fusion could not score below 0.5639,
+   and it scored 0.5958.
+
+Our own names for these methods, as used in the code and the competition-day notes, are mapped to the
+standard names in [docs/glossary.md](docs/glossary.md).
 
 ## How the score improved
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/scores_dark.png">
-  <img alt="Dot plot of the public leaderboard score at each step, with chance at 0.375. Methods that use the video score 0.35 to 0.47; text-only rules score 0.53 to 0.64, rising from centrality (0.5515) through taking turns (0.5958) to the final rule (0.6385)." src="docs/figures/scores_light.png">
+  <img alt="Dot plot of the public leaderboard score at each step, with chance at 0.375. Methods that use the video score 0.35 to 0.47; text-only rules score 0.53 to 0.64, rising from medoid selection (0.5515) through round-robin fusion (0.5958) to the final rule (0.6385)." src="docs/figures/scores_light.png">
 </picture>
 
 | Submission (public leaderboard) | Uses the video | Public |
 |---|---|---:|
 | Organizers' baseline, trained video rankers, SigLIP ensemble | Yes | 0.347–0.397 |
-| Pretrained SigLIP + centrality | Yes | 0.4682 |
-| Event-order check alone (SigLIP) | Yes | 0.4295 |
-| Reversed familiarity alone | No | 0.5327 |
-| Centrality alone | No | 0.5515 |
-| Centrality, three measures combined (`text_blend`) | No | 0.5521 |
-| Take turns: `text_blend` and reversed familiarity | No | 0.5958 |
-| + gate: reversed familiarity first when no candidate looks like the one the others were edited from | No | 0.6368 |
-| + gate uses familiarity of each candidate's own words (**final**) | No | **0.6385** |
+| Pretrained SigLIP + medoid selection | Yes | 0.4682 |
+| Monotonic event-to-frame alignment alone (SigLIP) | Yes | 0.4295 |
+| Lowest language-model likelihood first, alone | No | 0.5327 |
+| Medoid (MBR) selection alone | No | 0.5515 |
+| Medoid selection, three similarity measures fused by rank sum (Borda count) | No | 0.5521 |
+| Round-robin fusion: Borda-count medoid and lowest likelihood | No | 0.5958 |
+| + rule-based switch: lowest likelihood first when no candidate looks like the source of the edits | No | 0.6368 |
+| + likelihood of the unaligned tokens only, when the switch fires (**final**) | No | **0.6385** |
 
 One public score is uncertain by about ±0.016, so the last step (+0.0017) is within noise; it became the
 final because it was the highest score. On the private 70% the final scored 0.6417, slightly above its
@@ -86,15 +94,19 @@ it, is in [docs/experiments/validation.md](docs/experiments/validation.md).
 
 For each episode, from the five candidate texts alone:
 
-1. **`text_blend`:** rank by centrality, as the sum of three ranks: the share of each candidate's words
-   found in the other candidates, its mean MPNet similarity to them, and word-sequence similarity.
-2. **Reversed familiarity:** rank by how *unlike* the training descriptions each candidate's wording is,
-   from a word-bigram model fitted on the training text. When the gate below fires, only the word pairs
-   that touch a candidate's own words (words that match nothing in the other candidates under a
-   word-by-word alignment) are scored.
-3. **Gate:** if some candidate has all its words in the others, it looks like the base text the others
-   were edited from, and `text_blend`'s pick goes first. Otherwise reversed familiarity's pick goes first.
-4. **Interleave:** fill the ranking by taking the next unused candidate from each list in turn.
+1. **Medoid (MBR) selection, Borda-count fusion** (our `text_blend`): rank each candidate by its
+   similarity to the other four, as the sum of three ranks: token overlap with the other candidates,
+   mean MPNet cosine similarity, and Ratcliff/Obershelp word-sequence similarity.
+2. **Lowest language-model likelihood first** (our *reversed familiarity*): rank by the mean
+   log-probability of each candidate's word pairs under an interpolated bigram model fitted on the
+   training descriptions, least likely first. When the switch below fires, only the word pairs that
+   touch the candidate's **unaligned tokens** (its edit span: words that match nothing in the other
+   candidates under a word-level alignment) are scored.
+3. **Rule-based switch** (our *gate*): if some candidate has all its words in the others, it looks like
+   the source sentence the others were edited from, and the medoid ranking's pick goes first. Otherwise
+   the likelihood ranking's pick goes first.
+4. **Round-robin rank fusion** (our *interleave*): fill the ranking by taking the next unused candidate
+   from each ranking in turn.
 
 It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules.py` and `team/evaluation/text_rules.py`.
 
@@ -106,7 +118,7 @@ It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules
 ├── tests/                 the kit's tests
 ├── team/                  our code, run from the root as python -m team.<folder>.<module>; index in team/README.md
 │   ├── candidates/        generated negatives and validation candidate sets
-│   ├── training/          trained rankers, SmolVLM fine-tuning, the order aligner
+│   ├── training/          trained rankers, SmolVLM fine-tuning, the learned event alignment
 │   ├── inference/         ranking rules that go into a submission ZIP (the final: submission_text_rules.py)
 │   ├── export/            build submission folders and the Colab notebooks
 │   ├── evaluation/        local checks and leaderboard analysis
@@ -118,7 +130,8 @@ It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules
 │   ├── competition/       the rules we worked under and their changes
 │   ├── experiments/       every experiment, the findings and the end-of-competition audit
 │   ├── competition-day/   handoff notes and the presentation outline
-│   └── figures/           the README figures and the script that draws them
+│   ├── figures/           the README figures and the script that draws them
+│   └── glossary.md        our method names and their standard names
 └── cuda/                  local GPU setup; data, models and outputs stay out of git
 ```
 
@@ -128,6 +141,7 @@ code imports the kit's `common.py` and `dataset.py`.
 | Start here | For |
 |---|---|
 | [team/README.md](team/README.md) | What each of our scripts does |
+| [docs/glossary.md](docs/glossary.md) | Our method names (used in the code and notes) and their standard names |
 | [docs/experiments/validation.md](docs/experiments/validation.md) | Every experiment: settings, validation data, local and public scores |
 | [docs/experiments/audit.md](docs/experiments/audit.md) | The end-of-competition review: each claim graded as fact, strong, weak or retracted |
 | [docs/competition/brief.md](docs/competition/brief.md) | The competition rules we worked under |
@@ -150,12 +164,22 @@ original list (Python 3.11, torch 2.5.1) and lacks packages our code needs, such
 ## Team
 
 - Naufal Kamaruddin ([@naufalkmd](https://github.com/naufalkmd)): team lead; starter-kit translation, the
-  submission rules (interleaving, the gate and its variants), the final Colab build
-- 노준우 ([@njunu17](https://github.com/njunu17)): the first text rules (centrality, familiarity), SmolVLM
-  experiments, the event-order check, merge bounds, the audit and the validation log
+  submission rules (round-robin fusion, the rule-based switch and its variants), the final Colab build
+- 노준우 ([@njunu17](https://github.com/njunu17)): the first text rules (medoid selection, language-model
+  likelihood), SmolVLM experiments, the monotonic event alignment, the worst-case bounds, the audit and
+  the validation log
 - 한경훈 ([@opolo17](https://github.com/opolo17)): SigLIP training and the three-seed SigLIP ensemble
   (`team/siglip_ensemble/`)
 - 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`team/inference/exp6_submission.py`)
 
 The baseline code at the repository root is the organizers' starter kit; commit `a9a4179` is the kit as we
 received it.
+
+## References
+
+- S. Gururangan et al. Annotation Artifacts in Natural Language Inference Data. NAACL 2018.
+  [arXiv:1803.02324](https://arxiv.org/abs/1803.02324)
+- A. Poliak et al. Hypothesis Only Baselines in Natural Language Inference. *SEM 2018.
+  [arXiv:1805.01042](https://arxiv.org/abs/1805.01042)
+- S. Kumar and W. Byrne. Minimum Bayes-Risk Decoding for Statistical Machine Translation. NAACL 2004.
+  [ACL Anthology N04-1022](https://aclanthology.org/N04-1022/)

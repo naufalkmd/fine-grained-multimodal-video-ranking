@@ -32,17 +32,17 @@ THEMES = {  # reference palette (dataviz skill), validated: slot 1 blue, slot 2 
 # (label, public score, uses the video); top to bottom in the order we got there
 STEPS = [
     ("Baseline and trained video models", (0.3469, 0.3968), True),
-    ("Event-order check (SigLIP)", 0.4295, True),
-    ("Pretrained SigLIP + centrality", 0.4682, True),
-    ("Reversed familiarity", 0.5327, False),
-    ("Centrality", 0.5515, False),
-    ("Centrality, three measures combined", 0.5521, False),
-    ("Take turns: centrality and familiarity", 0.5958, False),
-    ("+ gate: which list goes first", 0.6368, False),
-    ("+ own-words familiarity (final)", 0.6385, False),
-]
-LABELLED = {"Pretrained SigLIP + centrality", "Centrality", "Take turns: centrality and familiarity",
-            "+ own-words familiarity (final)"}
+    ("Monotonic event alignment (SigLIP)", 0.4295, True),
+    ("Pretrained SigLIP + medoid selection", 0.4682, True),
+    ("Lowest language-model likelihood first", 0.5327, False),
+    ("Medoid (MBR) selection", 0.5515, False),
+    ("Medoid, three measures, Borda count", 0.5521, False),
+    ("Round-robin fusion of the two rankings", 0.5958, False),
+    ("+ rule-based switch for first place", 0.6368, False),
+    ("+ likelihood of unaligned tokens (final)", 0.6385, False),
+]  # standard names; docs/glossary.md maps them to the names in our code
+LABELLED = {"Pretrained SigLIP + medoid selection", "Medoid (MBR) selection", "Round-robin fusion of the two rankings",
+            "+ likelihood of unaligned tokens (final)"}
 
 # The organizers' slides show a reversed action and an added action; the other two are our negative types.
 CANDIDATES = [

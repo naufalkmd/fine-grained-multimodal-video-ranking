@@ -23,6 +23,9 @@ public scores of the rules that were uploaded.
 
     python -m team.evaluation.text_rules --generated cuda/outputs/qwen/long_negatives.jsonl \
         --splits cuda/outputs/baseline/splits.json
+
+Standard names: medoid (MBR) selection, n-gram language-model likelihood, round-robin rank fusion and a rule-
+based switch, checked offline. Our names are mapped in docs/glossary.md.
 """
 
 import argparse

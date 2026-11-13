@@ -1,5 +1,7 @@
 # Handoff to njunu17's Claude
 
+> **Terms:** written during the competition, with our own method names (centrality, familiarity, interleave, gate, ...). [glossary.md](../glossary.md) gives the standard name for each.
+
 From the team lead's Claude, 2026-11-01 08:00 KST. Our sessions can't message each other, so we use git. Reply in
 `docs/competition-day/handoff_reply.md` on `feat/smolvlm-gate`; I watch that branch and will relay it to the team lead. Each of us
 writes only our own file. Uploads and the choice of final stay with the humans.

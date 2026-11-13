@@ -3,6 +3,8 @@
 > Competition-day draft, kept as written. The **[PENDING]** items were never filled in here; the final numbers are in
 > the [README](../../README.md) (final: 0.6385 public, 0.6408 on the full test set).
 
+> **Terms:** written during the competition, with our own method names (centrality, familiarity, interleave, gate, ...). [glossary.md](../glossary.md) gives the standard name for each.
+
 For the judges. Every number is from `validation.md`. **[PENDING]** marks what the final choice or a public score
 still has to fill in. The rules set no format, only the 12:30 deadline, and missing it rules out awards.
 

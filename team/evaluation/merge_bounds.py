@@ -12,6 +12,9 @@ pair (a, b) this enumerates all 4! x 4! placements of the negatives and scores t
 
     python -m team.evaluation.merge_bounds cuda/public_csv/central_submission.csv cuda/public_csv/text_style.csv \
         --reverse-second --observed-rank-sum 0.5443
+
+Standard names: worst-case bounds of rank fusion by exhaustive enumeration. Our names are mapped in
+docs/glossary.md.
 """
 
 import argparse

@@ -8,6 +8,9 @@ prefers wording that the training descriptions make less likely (bigram counts s
 weights/bigram_counts.json), because publicly the most familiar wording scored far below chance.
 With `"gate": false` in weights/bigram_counts.json, centrality always goes first (plain
 interleaving). Reads only the episode's candidate texts, with no state kept between episodes.
+
+Standard names: a rule-based switch between medoid selection and lowest language-model likelihood, then round-
+robin rank fusion. Our names are mapped in docs/glossary.md.
 """
 
 import difflib

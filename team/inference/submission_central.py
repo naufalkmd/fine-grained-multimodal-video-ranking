@@ -4,6 +4,9 @@ A diagnostic: it reads only the episode's own candidate texts and no video, so i
 shows whether test negatives are edits of the correct description. When every negative changes
 one part of the correct text, the correct text is the one most similar to all the others. Uses
 nothing but the standard library, and keeps no state between episodes.
+
+Standard names: medoid / minimum Bayes risk (MBR) selection with word-sequence (Ratcliff/Obershelp)
+similarity. Our names are mapped in docs/glossary.md.
 """
 
 import difflib

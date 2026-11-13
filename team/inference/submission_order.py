@@ -7,6 +7,9 @@ when the order fits, more negative the more it has to be bent. Ties go to centra
 (submission_central.py). No trained layers; SigLIP is stored in float16 and its tokenizer is read
 from tokenizer.json, because sentencepiece isn't in the evaluation environment. No state is kept
 between episodes. Same scoring as team/evaluation/order_check.py.
+
+Standard names: monotonic event-to-frame alignment by dynamic programming. Our names are mapped in
+docs/glossary.md.
 """
 
 import re

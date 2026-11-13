@@ -11,6 +11,9 @@ event, so any text-only preference cancels and only the order counts.
 right video, another episode's video and the right video reversed.
 
     python -m team.evaluation.order_check --episodes 200
+
+Standard names: monotonic (order-preserving) alignment by dynamic programming, as in dynamic time warping. Our
+names are mapped in docs/glossary.md.
 """
 
 import argparse

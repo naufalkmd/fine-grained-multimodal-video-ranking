@@ -33,10 +33,15 @@ Each folder is one stage. Run any module from the repository root, for example
 `python -m team.export.export_text ...`. Most submissions are a pair: `inference/submission_X.py`
 (the ranking rule) and `export/export_X.py` (builds a submission folder with it).
 
+The descriptions use the names in our code and configs. [docs/glossary.md](../docs/glossary.md) maps them to
+standard names: *centrality* is medoid / minimum Bayes risk (MBR) selection, *familiarity* is n-gram
+language-model likelihood, *interleave* is round-robin rank fusion, *gate* is a rule-based switch and
+*own words* are unaligned tokens.
+
 ### `candidates/`: negatives and validation candidate sets
 
 - `negatives.py`: generates negative descriptions from the organizers' data with a fixed seed.
-- `lexical.py`: hub-corrected word-overlap similarity used by the `lexical` negative type.
+- `lexical.py`: word-overlap similarity with hubness reduction (CSLS), used by the `lexical` negative type.
 - `word_swap.py`: finds replacement words from the descriptions themselves, for `word_swap` negatives.
 - `qwen_negatives.py`: asks a local Qwen3-4B-Instruct (float16, fits a T4) to rewrite each
   description as one short sentence and make four single-change negatives. Only code rules filter
@@ -62,7 +67,7 @@ Each folder is one stage. Run any module from the repository root, for example
   some batches so that it also learns the no-frame likelihood.
 - `train_smolvlm_contrast.py`: continues fine-tuning so that the video, not the wording, separates
   one-word edits; compares each edit on the episode's frames and another episode's.
-- `train_order.py`, `order_features.py`: the order aligner on frozen SigLIP features (not adopted;
+- `train_order.py`, `order_features.py`: a learned monotonic event-to-frame alignment (the order aligner) on frozen SigLIP features (not adopted;
   see `docs/experiments/audit.md`).
 
 ### `inference/`: what goes into a submission ZIP
@@ -70,18 +75,20 @@ Each folder is one stage. Run any module from the repository root, for example
 These files are copied to the top of the submission folder and import each other by bare name.
 
 - `submission_text_rules.py`: **the final's rule.** Ranks by how candidates relate to each other
-  (consensus, MPNet meaning or `blend`). With `merge` set to `interleave`, it takes turns with the
-  least familiar wording; `gate` and its options decide which goes first.
+  (consensus, MPNet meaning or `blend`, a Borda-count fusion of the three). With `merge` set to
+  `interleave`, it takes turns with the least familiar wording (round-robin fusion); `gate` and its
+  options decide which goes first (a rule-based switch).
 - `submission_style.py`: ranks by how familiar a candidate's word pairs are from the training
-  descriptions. `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
-- `submission_chars.py`: character familiarity, keeping case and punctuation.
+  descriptions (likelihood under an interpolated word-bigram language model). `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
+- `submission_chars.py`: character familiarity (a Witten-Bell interpolated character n-gram model),
+  keeping case and punctuation.
 - `submission_central.py`: a text-only submission that ranks candidates by how similar each is to
   the others, used to probe how the test negatives were made.
 - `submission_regime.py`: centrality first when some candidate's words all survive in the others (the
   rest look like edits of it), otherwise unfamiliar wording first; the two alternate after that. Text only.
 - `submission_fusion.py`: text signals (centrality, unfamiliar words or characters under counts from
   the training descriptions, shortness) combined by one signal, interleaving or public rank shares
-  (`bayes`), optionally with the structure gate. Set in `weights/rule.json`.
+  (`bayes`, an empirical-Bayes prior), optionally with the structure gate. Set in `weights/rule.json`.
 - `ranker_model.py`: the `mean_pool` and `temporal` models.
 - `submission_ranker.py`: a trained ranker as the submission's `submission.py`. With `central_weight`
   in `inference_config.json` (set by `export_ranker.py --central-weight`), it adds candidate centrality.
@@ -92,6 +99,7 @@ These files are copied to the top of the submission folder and import each other
 - `submission_evidence.py`: ranks by what this video adds, using fixed reference videos.
 - `submission_shortlist.py`: centrality makes a shortlist, and image evidence orders it.
 - `submission_order.py`: ranks by whether a candidate's events fit the frames in the stated order
+  (monotonic alignment)
   (an upload probe of `evaluation/order_check.py`); `submission_text_order.py` adds it to the text rule.
 - `smolvlm_scorer.py`: scores candidates by SmolVLM's likelihood of writing them after the frames,
   minus a weighted no-frame likelihood.
@@ -121,19 +129,20 @@ These files are copied to the top of the submission folder and import each other
 ### `evaluation/`: local checks and leaderboard analysis
 
 - `rank_eval.py`: scores an exported submission on fixed 5-candidate validation sets, and runs
-  the scoring, text-only leak and frame-order checks.
-- `action_pairing.py`: checks whether reversing the frames flips a submission's choice between a
+  the scoring, text-only leak (hypothesis-only baseline) and frame-order checks.
+- `action_pairing.py`: a reversed-video consistency test: checks whether reversing the frames flips a submission's choice between a
   short positive and its reversed-action sentence. Wording cancels out, so chance is 0.5.
 - `text_rules.py`: text-only rules (centrality, familiar or unfamiliar wording, interleaving, a
   structure gate) scored on `qwen_long_negatives.py`'s LLM-edited validation sets.
 - `order_check.py`: checks locally whether a candidate's events fit the frames in the stated order
-  (SigLIP, no training).
+  (monotonic alignment by dynamic programming over SigLIP event-frame scores, no training).
 - `smolvlm_check.py`: scores SmolVLM with the right and a wrong video, at prior weights 0 and 1,
-  and runs action pairing. Saves the raw scores.
+  and runs action pairing (a reversed-video consistency test). Saves the raw scores.
 - `time_submission.py`: times an exported submission and projects the 1,910-episode test.
 - `compare_public.py`: compares public per-episode CSVs with a baseline (paired difference, sign
   test, rank moves). Keep the CSVs in `cuda/public_csv/`, which git ignores.
-- `merge_bounds.py`: exact worst, best and overlap-fitted scores for merging two rules, from their
+- `merge_bounds.py`: exact worst, best and overlap-fitted scores for merging two rules (worst-case
+  bounds by exhaustive enumeration), from their
   public per-episode CSVs.
 
 ### Other folders

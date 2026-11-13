@@ -5,6 +5,9 @@ validation split one description was the negative of 28 others while 103 were ne
 text-only classifier could spot negatives from that skew (score 0.485). CSLS (Conneau et al.,
 2018) subtracts each description's mean similarity to its k nearest neighbours, which spreads the
 picks and brings the text-only score to chance. Uses only the descriptions; no model scores.
+
+Standard names: hubness reduction (CSLS) applied to word-overlap similarity. Our names are mapped in
+docs/glossary.md.
 """
 
 import numpy as np

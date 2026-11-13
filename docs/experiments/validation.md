@@ -1,5 +1,7 @@
 # Validation
 
+> **Terms:** written during the competition, with our own method names (centrality, familiarity, interleave, gate, ...). [glossary.md](../glossary.md) gives the standard name for each.
+
 How we measure experiments. This is the team's own approach, not an organizer
 requirement. The competition rules are in [brief.md](../competition/brief.md).
 

@@ -6,6 +6,9 @@ create. `style_sign` in inference_config.json set to -1 favours the least famili
 this rule scored 0.2411 publicly, well below chance. `central_rank_weight` adds the rank from
 candidate similarity. `merge` set to "interleave" instead takes the most central candidate, then the
 top of the style ranking, and so on in turn. No images are used, and no state is kept between episodes.
+
+Standard names: n-gram language-model likelihood (interpolated word bigram); style_sign -1 ranks lowest
+likelihood first. Our names are mapped in docs/glossary.md.
 """
 
 import difflib

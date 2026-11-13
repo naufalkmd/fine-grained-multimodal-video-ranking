@@ -7,6 +7,8 @@ validation records from team.candidates.qwen_negatives and any exported ranker s
 
     python -m team.evaluation.action_pairing --config cuda/config.json \
         --generated cuda/outputs/qwen/candidates_v3.jsonl --submission-dir cuda/q2_submission
+
+Standard names: a reversed-video consistency test. Our names are mapped in docs/glossary.md.
 """
 
 import argparse

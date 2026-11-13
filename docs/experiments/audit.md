@@ -4,6 +4,8 @@
 > [handoff.md](../competition-day/handoff.md), update 11:45), which scored 0.6408 on all 1,910 test episodes (private 0.6417).
 > The status below is as written at 11:20 on the day.
 
+> **Terms:** written during the competition, with our own method names (centrality, familiarity, interleave, gate, ...). [glossary.md](../glossary.md) gives the standard name for each.
+
 ## Status at a glance (11:20 KST): final plan
 
 - **Final: `text_blend_interleave_gated`, public 0.6368, built on Colab at 10:51** (run

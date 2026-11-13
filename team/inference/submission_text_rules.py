@@ -16,6 +16,9 @@ character familiarity (team/inference/submission_chars.py, case and punctuation 
 the first list from a candidate's own words only (`own_word_scores`), and `gate_mean` from the within-episode mean of that and
 the least familiar wording; otherwise, `gate_base_first` moves the candidates with no own words to the front. No state is
 kept between episodes.
+
+Standard names: medoid (MBR) selection fused by rank sum (Borda count); round-robin rank fusion (interleave);
+a rule-based switch (gate); unaligned tokens (own words). Our names are mapped in docs/glossary.md.
 """
 
 import difflib
