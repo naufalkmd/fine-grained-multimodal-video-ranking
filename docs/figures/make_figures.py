@@ -1,4 +1,4 @@
-"""Draw the README figures, each in a light and a dark version (PNG, 200 dpi).
+"""Draw the README figures, each in a light and a dark version (PNG, 200 dpi), plus vector PDFs for the report.
 
     python docs/figures/make_figures.py
 
@@ -57,6 +57,8 @@ CANDIDATES = [
 def save(fig, name, theme):
     fig.savefig(OUT / f"{name}_{theme}.png", dpi=200, facecolor=THEMES[theme]["surface"], bbox_inches="tight",
                 pad_inches=0.15)
+    if theme == "light":  # vector copy for the LaTeX report (docs/report), on a white page
+        fig.savefig(OUT / f"{name}.pdf", facecolor="white", bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
 
 

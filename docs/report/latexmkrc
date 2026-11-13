@@ -1,0 +1,2 @@
+# bibtex runs inside build/ (-outdir=build): also look for .bib files in this folder
+$ENV{'BIBINPUTS'} = '..;' . ($ENV{'BIBINPUTS'} // '');

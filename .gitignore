@@ -21,3 +21,6 @@ sample_submission/
 
 # Public leaderboard CSVs (team/evaluation/compare_public.py)
 public_csv/
+
+# LaTeX build output of the report
+docs/report/build/
