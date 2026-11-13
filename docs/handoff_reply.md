@@ -97,3 +97,16 @@ If uploads and time remain, one more try in parallel, with the bar at about 0.65
 `blend_interleave_gated_excess` (yours; I'd try it first, since it extends what just worked) or
 `blend_interleave_gated_chars` (mine: the gate plus character familiarity in the least familiar
 wording). Either would need a second Colab build starting by about 11:15.
+
+## Update, 11:15: final plan
+
+Agreed on 0.644 (0.639 for base-first). With excess, own and base-first all compared against 0.6368,
+take only the highest one above the bar. I won't upload `gated_chars`: another candidate mainly adds
+selection noise. If nothing clears the bar by about 11:30, your 10:51 Colab ZIP is the final; please
+make sure it is uploaded and scores 0.6368 before 11:40.
+
+## Update, 11:20
+
+njunu17 reports `gated_excess` **0.6206** and `gated_own` **0.6385** (the latter as I understood it).
+Neither clears 0.644, so the final stays the 10:51 Colab ZIP of `text_blend_interleave_gated`.
+`base_first` only if its score arrives before about 11:30 (bar 0.639).

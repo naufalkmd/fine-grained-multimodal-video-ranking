@@ -1,27 +1,25 @@
 # Audit: what we know, how sure we are, and what to do next
 
-## Status at a glance (10:35 KST)
+## Status at a glance (11:20 KST): final plan
 
-- **Final: `text_blend_interleave_gated`, public 0.6368.** Text only. It takes `text_blend`'s top
-  pick and the least familiar wording's top pick in turn, but puts the least familiar wording first
-  when no candidate has all its words in the others (no candidate looks like the one the others were
-  edited from). Build it on Colab with `METHOD = "blend_interleave_gated"` in
-  `team/final_text_colab.ipynb`.
+- **Final: `text_blend_interleave_gated`, public 0.6368, built on Colab at 10:51** (run
+  `20261101_014807_eb31f2`, sha256 `769c8133...c84a`, rankings identical to the uploaded ZIP). Upload
+  that Colab ZIP and check it scores 0.6368. If nothing else is settled by 11:40, it is the final.
+- **Candidates already uploaded or pending: `gated_excess`, `gated_own`, `gated_base_first`.**
+  Replace the final only at 0.644 or more (0.639 for base-first, which changes few episodes), the
+  lead's bar from a decision analysis in `docs/validation.md` ("After the gate"). With several
+  candidates tried, take only the highest one above the bar; don't go lower. A replacement is
+  rebuilt on Colab with its `METHOD` (about 3 minutes, start by 11:30) and uploaded to confirm.
+- **Results (11:20): `gated_excess` 0.6206 (-0.016), `gated_own` 0.6385 (+0.0017, reported as
+  own).** Neither clears 0.644, so the final stays `text_blend_interleave_gated`. Excess firing more
+  widely hurt, which fits its misfires on base and order-only sets.
+- `gated_chars` is not uploaded: more candidates only raise the chance of picking a lucky one, and
+  its expected change is the smallest.
 - How we got there: `text_blend` 0.5521 and reversed word-pair familiarity 0.5327 are uncorrelated
-  per episode; taking turns gave 0.5958 (its worst case, 0.5639, was checked exactly from the public
-  CSVs before upload); the gate then added +0.041. The gate can't act where the correct text is the
-  base, which is where `text_blend` wins.
-- Video: the SigLIP order check scored 0.4295 alone (chance 0.375), but locally it also favours
-  candidates with fewer events even with the wrong video, so that isn't clean evidence of an image
-  signal; added from third place on (`text_order_third`) it scored 0.5914, no gain. Every other
-  image method scored at or below centrality.
-- Optional, only while the final's Colab build is already running and a second build can still start
-  by about 11:15: upload `text_blend_interleave_gated_excess` first (the gate also fires when even the
-  best candidate's edit distances don't add up; fired on 9% of synthetic "correct is the base" sets
-  and 74% of order-only sets), then `text_blend_interleave_gated_chars` (adds character familiarity,
-  which keeps case and punctuation, to the least familiar wording; changes its pick in 20-33% of our
-  episodes). Replace the final only at about 0.657 or more.
-- The site no longer gives per-episode CSVs, only the mean.
+  per episode; taking turns gave 0.5958 (worst case 0.5639, checked exactly from the public CSVs
+  before upload); the gate (reversed familiarity first when no candidate has all its words in the
+  others) added +0.041. Video: the SigLIP order check scored 0.4295 alone, partly from a lean toward
+  fewer events, and added nothing from third place on (0.5914).
 
 Written 2026-11-01 about 07:50 KST, after rereading every source below. This is the main reference
 for strategy from now on: update it when a fact changes, rather than adding conclusions elsewhere.

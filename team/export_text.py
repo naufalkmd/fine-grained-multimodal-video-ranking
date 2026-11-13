@@ -16,6 +16,7 @@ never loads them. `--method` picks the submission:
   to the others don't add up. The threshold, 0.3, was fixed on synthetic candidates, not on public scores.
 - `blend_interleave_gated_own`: when the gate fires, the first pick comes from a candidate's own words only.
 - `blend_interleave_gated_mean`: when the gate fires, the first list averages whole-text and own-word unfamiliarity.
+- `blend_interleave_gated_mean_chars`: the same, with whole-text unfamiliarity judged by word pairs and characters.
 - `blend_interleave_gated_base_first`: when it doesn't fire, candidates with no own words come before the others.
 
     python -m team.export_text --method blend_interleave --base-dir cuda/sample_submission \
@@ -57,7 +58,7 @@ def export(method, base_dir, data_dir, output_dir):
                 config["chars"] = True
             if method == "blend_interleave_gated_own":
                 config["gate_own_words"] = True
-            if method == "blend_interleave_gated_mean":
+            if method in ("blend_interleave_gated_mean", "blend_interleave_gated_mean_chars"):
                 config["gate_mean"] = True
             if method == "blend_interleave_gated_base_first":
                 config["gate_base_first"] = True
@@ -83,7 +84,8 @@ def main():
                                              "blend_interleave_gated_excess", "blend_interleave_chars",
                                              "blend_interleave_gated_chars", "blend_interleave_gated_own",
                                              "blend_interleave_gated_mean",
-                                             "blend_interleave_gated_base_first"], required=True)
+                                             "blend_interleave_gated_base_first",
+                                             "blend_interleave_gated_mean_chars"], required=True)
     parser.add_argument("--base-dir", type=Path, required=True)
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
