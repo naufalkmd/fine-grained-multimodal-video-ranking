@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.negatives import (
+from team.candidates.negatives import (
     NEGATIVE_TYPES,
     NegativeGenerator,
     build_validation_sets,
@@ -17,8 +17,8 @@ from team.negatives import (
     reorder_clauses,
     split_sentences,
 )
-from team.lexical import lexical_similarity
-from team.rank_eval import RANDOM_SCORE, order_check, rank_score, score_known_scorers
+from team.candidates.lexical import lexical_similarity
+from team.evaluation.rank_eval import RANDOM_SCORE, order_check, rank_score, score_known_scorers
 
 DESCRIPTIONS = [
     f"Person {i} opens box {i}, then lifts it. They move cup {i}. They wave {i}, then sit. "
@@ -131,7 +131,7 @@ class FakeEpisode:
 
 
 def test_order_check_detects_a_model_that_ignores_frame_order(monkeypatch):
-    monkeypatch.setattr("team.rank_eval.load_images", lambda episode: _FakeImages([9, 1, 3]))
+    monkeypatch.setattr("team.evaluation.rank_eval.load_images", lambda episode: _FakeImages([9, 1, 3]))
     episodes = [FakeEpisode() for _ in range(5)]
     assert order_check(FakePredictor(False), episodes, 5)["order_blind"]
     sensitive = order_check(FakePredictor(True), episodes, 5)

@@ -19,5 +19,5 @@ sample_submission/
 *.pt
 *.safetensors
 
-# Public leaderboard CSVs (team/compare_public.py)
+# Public leaderboard CSVs (team/evaluation/compare_public.py)
 public_csv/

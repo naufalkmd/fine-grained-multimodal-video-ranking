@@ -8,7 +8,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.train_rank import TextBank, candidate_loss, correct_ranks
+from team.training.train_rank import TextBank, candidate_loss, correct_ranks
 
 
 def test_correct_ranks_match_a_stable_descending_sort():

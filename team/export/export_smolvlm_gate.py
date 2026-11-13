@@ -1,0 +1,73 @@
+"""Create the `submission_smolvlm_gate.py` submission from a fine-tuned SmolVLM (team/training/train_smolvlm.py).
+
+package.py requires the kit's files, so they are copied from an exported kit submission; they
+aren't loaded at inference. The fine-tuned model is stored in float16.
+
+    python -m team.export.export_smolvlm_gate --model-dir cuda/outputs/smolvlm/ft_v1 \
+        --kit-submission cuda/sample_submission --output-dir cuda/smolvlm_gate_v1_submission
+"""
+
+import argparse
+import json
+import shutil
+from pathlib import Path
+
+from common import ROOT, save_json
+
+MODEL_FILES = ("model.safetensors", "config.json", "generation_config.json", "added_tokens.json",
+               "chat_template.jinja", "merges.txt", "vocab.json", "tokenizer.json",
+               "tokenizer_config.json", "special_tokens_map.json", "preprocessor_config.json",
+               "processor_config.json")
+
+
+def export(model_dir, kit_submission, output_dir, threshold, max_frames, image_size, prior_weight,
+           video_margin=None):
+    model_dir, kit_submission, output_dir = map(Path, (model_dir, kit_submission, output_dir))
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError(f"Use an empty submission directory: {output_dir}")
+    (output_dir / "weights").mkdir(parents=True, exist_ok=True)
+    for name in ["baseline_model.py", "submission.json", "weights/mlp.pt"]:
+        shutil.copyfile(kit_submission / name, output_dir / name)
+    shutil.copytree(kit_submission / "models", output_dir / "models",
+                    ignore=shutil.ignore_patterns("smolvlm"))
+    (output_dir / "models/smolvlm").mkdir()
+    for name in MODEL_FILES:
+        if (model_dir / "model" / name).exists():
+            shutil.copyfile(model_dir / "model" / name, output_dir / "models/smolvlm" / name)
+    for name in ["submission_central.py", "smolvlm_scorer.py"]:
+        shutil.copyfile(ROOT / "team" / "inference" / name, output_dir / name)
+    shutil.copyfile(ROOT / "team/inference/submission_smolvlm_gate.py", output_dir / "submission.py")
+    save_json(output_dir / "inference_config.json", {"smolvlm_gate": {
+        "threshold": threshold, "max_frames": max_frames, "image_size": image_size,
+        "prior_weight": prior_weight, "video_margin": video_margin}})
+    training = json.loads((model_dir / "training_info.json").read_text(encoding="utf-8"))
+    save_json(output_dir / "training_info.json", {
+        "method": "centrality, with SmolVLM deciding pairs below the similarity threshold"
+                  + (f" or with SmolVLM scores at least {video_margin} apart" if video_margin else ""),
+        "model_id": "HuggingFaceTB/SmolVLM-256M-Instruct", "storage_dtype": "float16",
+        "smolvlm_training": training,
+        "note": "The kit's DINOv2, MPNet and weights/mlp.pt are present only because package.py "
+                "requires them; they aren't loaded."})
+    print(f"Exported: {output_dir.resolve()}", flush=True)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--model-dir", type=Path, required=True,
+                        help="team.training.train_smolvlm output, with model/ and training_info.json.")
+    parser.add_argument("--kit-submission", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--threshold", type=float, default=0.6)
+    parser.add_argument("--max-frames", type=int, default=8)
+    parser.add_argument("--image-size", type=int, default=512)
+    parser.add_argument("--prior-weight", type=float, default=1.0)
+    parser.add_argument("--video-margin", type=float,
+                        help="Also let SmolVLM decide pairs whose scores differ by at least this.")
+    args = parser.parse_args()
+    export(args.model_dir, args.kit_submission, args.output_dir, args.threshold, args.max_frames,
+           args.image_size, args.prior_weight, args.video_margin)
+
+
+if __name__ == "__main__":
+    main()

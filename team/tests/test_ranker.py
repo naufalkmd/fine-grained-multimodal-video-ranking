@@ -11,9 +11,9 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.negatives import NegativeGenerator, reversed_description
-from team.ranker_model import MODELS, MeanPoolRanker, TemporalRanker
-from team.train_ranker import (
+from team.candidates.negatives import NegativeGenerator, reversed_description
+from team.inference.ranker_model import MODELS, MeanPoolRanker, TemporalRanker
+from team.training.train_ranker import (
     SELECTION_SETS,
     collate_frames,
     draw_negatives,
@@ -46,7 +46,7 @@ class PairingModel(torch.nn.Module):
 
 @pytest.mark.parametrize("text_bias,video_gain,expected", [(5.0, 0.0, 0.5), (5.0, 1.0, 1.0), (0.0, 0.0, 0.5)])
 def test_order_pairing_ignores_text_bias_and_rewards_video_order(monkeypatch, text_bias, video_gain, expected):
-    monkeypatch.setattr("team.train_ranker.encode_tokens",
+    monkeypatch.setattr("team.training.train_ranker.encode_tokens",
                         lambda encoders, texts: (torch.zeros(len(texts), 1, 1), torch.ones(len(texts), 1, dtype=torch.bool)))
     episodes = [PairingEpisode(f"e{i}") for i in range(4)]
     frames = {e.episode_id: torch.tensor([[1.0], [2.0], [3.0]]).half() for e in episodes}
@@ -153,7 +153,7 @@ def test_run_epoch_ranks_one_correct_and_k_negatives_also_when_flipped(monkeypat
         seen.append(list(texts))
         return torch.randn(len(texts), 3, 768), torch.ones(len(texts), 3, dtype=torch.bool)
 
-    monkeypatch.setattr("team.train_ranker.encode_tokens", fake_tokens)
+    monkeypatch.setattr("team.training.train_ranker.encode_tokens", fake_tokens)
     episodes = [TrainEpisode(i) for i in range(12)]
     generator = NegativeGenerator([e.description for e in episodes], [["a"]] * 12)
     frames = {e.episode_id: torch.randn(4, 768).half() for e in episodes}
@@ -176,7 +176,7 @@ def test_selection_uses_only_sets_without_a_detected_text_leak():
 
 
 def test_run_epoch_records_the_candidates_it_used(monkeypatch):
-    monkeypatch.setattr("team.train_ranker.encode_tokens", lambda encoders, texts: (
+    monkeypatch.setattr("team.training.train_ranker.encode_tokens", lambda encoders, texts: (
         torch.randn(len(texts), 3, 768), torch.ones(len(texts), 3, dtype=torch.bool)))
     episodes = [TrainEpisode(i) for i in range(4)]
     generator = NegativeGenerator([e.description for e in episodes], [["a"]] * 4)
@@ -199,7 +199,7 @@ QWEN_RECORD = {"episode_id": "e1", "positive": "A person folds a towel and place
 
 
 def test_qwen_candidates_fill_to_k_and_flip_with_the_swapped_sentence():
-    from team.train_ranker import qwen_candidates
+    from team.training.train_ranker import qwen_candidates
 
     pool = [f"Someone does thing {i}." for i in range(10)]
     correct, negatives, flipped = qwen_candidates(QWEN_RECORD, 8, 0.0, pool, random.Random(0))
@@ -213,7 +213,7 @@ def test_qwen_candidates_fill_to_k_and_flip_with_the_swapped_sentence():
 
 
 def test_qwen_records_come_only_from_the_training_split(tmp_path):
-    from team.train_ranker import load_qwen_records
+    from team.training.train_ranker import load_qwen_records
 
     path = tmp_path / "generated.jsonl"
     rows = [{**QWEN_RECORD, "episode_id": "train_ok"}, {**QWEN_RECORD, "episode_id": "valid_one"},
@@ -223,8 +223,8 @@ def test_qwen_records_come_only_from_the_training_split(tmp_path):
 
 
 def test_submission_centrality_and_standardize():
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # submission.py imports ranker_model
-    from team.submission_ranker import centrality, standardize
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))  # submission.py imports ranker_model
+    from team.inference.submission_ranker import centrality, standardize
 
     texts = ["A man is buttoning his shirt.", "A man is unbuttoning his shirt.",
              "A man is buttoning his shirt and then sits down.", "A dog runs in a park."]
@@ -237,7 +237,7 @@ def test_submission_centrality_and_standardize():
 
 
 def test_qwen_reverse_actions_lets_the_reversed_sentence_be_correct_on_reversed_frames():
-    from team.train_ranker import qwen_candidates
+    from team.training.train_ranker import qwen_candidates
 
     record = {**QWEN_RECORD, "negatives": {
         "reversed_action": "A person unfolds a towel and places it down."}}
@@ -251,7 +251,7 @@ def test_qwen_reverse_actions_lets_the_reversed_sentence_be_correct_on_reversed_
 
 
 def test_action_pairing_ignores_wording_and_rewards_video_direction(monkeypatch):
-    from team import action_pairing as module
+    from team.evaluation import action_pairing as module
 
     class Episode:
         frames = ()

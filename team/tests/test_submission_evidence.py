@@ -7,8 +7,8 @@ import torch
 from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "team"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
 
 import ranker_model  # noqa: F401, needed by submission_ranker's import
 sys.modules.setdefault("ranker_model", ranker_model)

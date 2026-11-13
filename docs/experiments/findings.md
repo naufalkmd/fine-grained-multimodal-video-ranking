@@ -39,7 +39,7 @@ Local scores use our own validation candidates; public scores come from the lead
 4. **Combining with centrality only pays if the video signal is right on the test.** Weighted sums,
    near-tie breaking, a similarity gate and a confidence gate all scored at or below centrality.
 5. **LLM edits of the correct text don't look like the test.** Qwen3-4B, asked for full-length
-   incorrect versions (`team/qwen_long_negatives.py`), kept the correct text central (centrality
+   incorrect versions (`team/candidates/qwen_long_negatives.py`), kept the correct text central (centrality
    0.99-1.00) and made the negatives *less* like the training descriptions (`style` 0.58-0.64),
    the opposite of public (0.5515 and 0.2411), even when asked to reword. A structure that fits
    both public results, inferred and unconfirmed: the correct text comes from a different writer
@@ -77,7 +77,7 @@ the Qwen sets, with a median of 12 words, are shorter than the test.
 ## Centrality: a text-only cue
 
 When every negative is one edit of the correct text, the correct text is the one most similar to
-all the others. `team/submission_central.py` ranks by each candidate's mean word-level similarity
+all the others. `team/inference/submission_central.py` ranks by each candidate's mean word-level similarity
 to the other candidates. It uses only the episode's own input, so it is within the rules, but it
 never looks at the video.
 
@@ -93,10 +93,10 @@ least central candidate. Local sets overstate centrality.
 
 ## Test-like validation set built with Qwen
 
-`team/qwen_negatives.py` asks a local Qwen3-4B-Instruct (float16) to rewrite each description as
+`team/candidates/qwen_negatives.py` asks a local Qwen3-4B-Instruct (float16) to rewrite each description as
 one short sentence and make four single-change negatives: reversed action, added action, swapped
 order and changed detail. Only code rules filter the output; the prompt has no example sentences.
-`team/qwen_candidates.py` turns the validation split into the `qwen` set (323 complete items).
+`team/candidates/qwen_candidates.py` turns the validation split into the `qwen` set (323 complete items).
 
 Video-only models trained without Qwen data score on it about what they score on public (T2 0.379,
 H + `word_swap` 0.390 against public 0.3968). It overstates models trained on Qwen data, because
@@ -104,7 +104,7 @@ they can pick up Qwen's wording, and it overstates centrality (0.997 locally aga
 
 ## Measuring whether a model reads the video
 
-`team/action_pairing.py` checks whether reversing the frames flips a model's choice between a short
+`team/evaluation/action_pairing.py` checks whether reversing the frames flips a model's choice between a short
 positive and its reversed-action sentence ("folds" / "unfolds"). Wording alone cancels out, so
 chance is exactly 0.5 and only reading the action's direction from the video can raise it. It is a
 better local check of video use than the `qwen` set, which text cues inflate.
@@ -138,9 +138,9 @@ Q2 relies less on wording and more on the video than Q1 locally. Both still peak
 
 ## Model plus centrality, and why it failed on public
 
-`team/submission_ranker.py` takes `central_weight` from `inference_config.json`: each candidate
+`team/inference/submission_ranker.py` takes `central_weight` from `inference_config.json`: each candidate
 scores its standardized logit plus `central_weight` times its standardized centrality. With 0 it
-behaves exactly as before. `team/export_ranker.py --central-weight` sets it.
+behaves exactly as before. `team/export/export_ranker.py --central-weight` sets it.
 
 - w = 0.5 with Q1 (0.4068): the model led, and its near-chance public accuracy overrode
   centrality's correct choices.
@@ -161,15 +161,15 @@ description and its `word_swap` edit (0.999 at the 90th percentile, 300 descript
 for another episode's description. The rankers compare each candidate's text with the video
 separately, so near-identical candidates look the same to them whatever negatives they train on.
 
-**SmolVLM likelihood.** `team/smolvlm_scorer.py` scores a candidate by how likely SmolVLM-256M is to
+**SmolVLM likelihood.** `team/inference/smolvlm_scorer.py` scores a candidate by how likely SmolVLM-256M is to
 write it after seeing the frames, minus `prior_weight` times how likely it is with no frames
 (pointwise mutual information at weight 1). It reads the text word by word, so a changed word
-changes the score. `team/train_smolvlm.py` fine-tunes it to write the organizers' descriptions from
+changes the score. `team/training/train_smolvlm.py` fine-tunes it to write the organizers' descriptions from
 the frames, using only the correct descriptions (no generated negatives), with frames left out on
 20% of batches so that the same model learns the no-frame prior. Vision encoder frozen, 2 epochs,
 float16 mixed precision.
 
-Measured with `team/smolvlm_check.py` on 120 validation episodes. The SmolVLM model is trained on
+Measured with `team/evaluation/smolvlm_check.py` on 120 validation episodes. The SmolVLM model is trained on
 correct descriptions only, so every set is held out. Scores with the wrong video show how much
 comes from the text alone:
 
@@ -189,7 +189,7 @@ comes from the text alone:
   similarity is below 0.5, but 0.580 against 0.498 above 0.95. Centrality is the reverse: strong on
   edits, chance on other scenes.
 
-**The gate.** `team/submission_smolvlm_gate.py` compares every pair of candidates once: below a word
+**The gate.** `team/inference/submission_smolvlm_gate.py` compares every pair of candidates once: below a word
 similarity of 0.6 the higher SmolVLM score wins, otherwise the more central candidate, and the
 ranking is by wins. SmolVLM only runs if some pair is below 0.6. Locally (150 episodes) it keeps
 centrality on edits (`word_swap` 0.995 both), recovers other scenes (`similar_episode` 0.891 against
@@ -218,7 +218,7 @@ similarity in 77% of episodes and sentence swaps in 96%, against 0% for one-word
 descriptions, so the gate's 2 changed episodes also suggest long candidates with small edits. This
 is inferred from simulations, not measured on the test.
 
-**Contrast training (`contrast_v1`).** `team/train_smolvlm_contrast.py` continues from `ft_v1` for
+**Contrast training (`contrast_v1`).** `team/training/train_smolvlm_contrast.py` continues from `ft_v1` for
 one epoch with the correct description T, a one-word edit T' (`word_swap`, table from the training
 split) and another batch episode's frames V2, asking for
 [log p(T|V) - log p(T'|V)] - [log p(T|V2) - log p(T'|V2)] > 0, so text-only preferences cancel.

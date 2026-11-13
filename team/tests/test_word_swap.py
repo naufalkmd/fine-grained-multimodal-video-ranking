@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.negatives import NegativeGenerator
-from team.word_swap import replacement_table, swap_one_word
+from team.candidates.negatives import NegativeGenerator
+from team.candidates.word_swap import replacement_table, swap_one_word
 
 PEOPLE = ["man", "woman", "child"]
 VERBS = ["opens", "closes", "lifts"]

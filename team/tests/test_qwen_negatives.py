@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.qwen_negatives import check, checked_record, parse
+from team.candidates.qwen_negatives import check, checked_record, parse
 
 POSITIVE = "A person folds a towel and places it on the table."
 

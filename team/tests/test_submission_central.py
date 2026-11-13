@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.submission_central import Submission
+from team.inference.submission_central import Submission
 
 
 def test_the_one_edited_text_ranks_first_and_every_id_is_returned():

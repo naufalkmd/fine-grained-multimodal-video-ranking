@@ -9,8 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from team.negatives import NegativeGenerator
-from team.train_negatives import TrainingNegatives, parse_mix, sample_negatives
+from team.candidates.negatives import NegativeGenerator
+from team.training.train_negatives import TrainingNegatives, parse_mix, sample_negatives
 
 DESCRIPTIONS = [
     f"Person {i} opens box {i % 7}, then lifts it. They move cup {i % 5}. Finally, they wave."

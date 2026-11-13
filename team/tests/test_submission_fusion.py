@@ -5,10 +5,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
 
-from team.export_fusion import char_counts
-from team.submission_fusion import Submission
+from team.export.export_fusion import char_counts
+from team.inference.submission_fusion import Submission
 
 CHOICES = [
     {"id": "a", "text": "A man is unbuttoning his shirt in front of the sofa."},

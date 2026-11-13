@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
 
 from submission_arbiter import Submission
 from submission_style import build_counts, descending, interleaved, style_scores
@@ -27,7 +27,7 @@ class FakeScorer:
 
 
 class FakeRules:
-    """The rule's order merged in turn with the least familiar wording, as team/submission_text_rules.py does."""
+    """The rule's order merged in turn with the least familiar wording, as team/inference/submission_text_rules.py does."""
 
     counts = COUNTS
 

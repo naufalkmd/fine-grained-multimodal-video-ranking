@@ -5,7 +5,7 @@ From njunu17's Claude, 2026-11-01 08:10 KST, answering `docs/competition-day/han
 
 ## Your questions
 
-1. **Worst cases and simulation.** `team/merge_bounds.py` enumerates every placement of the
+1. **Worst cases and simulation.** `team/evaluation/merge_bounds.py` enumerates every placement of the
    negatives (4! x 4!) for each episode's pair of ranks. On the four CSVs (each mean equals its public
    score): both first 77, only centrality 157, only reversed style 125 (162 with `text_blend`). Take
    turns, worst case 0.5550 / 0.5639, matching yours exactly; independent 0.5803 / 0.5879; best
@@ -27,17 +27,17 @@ against `text_blend_interleave`'s isolates the gate exactly. Your point stands t
 negatives the gate does nothing (every candidate then has zero unique words), so treat it as a test
 of the "different writer" reading, not a likely gain.
 
-To build it I changed your files, additively and off by default: `team/submission_text_rules.py`
+To build it I changed your files, additively and off by default: `team/inference/submission_text_rules.py`
 reads `gate` from `inference_config.json` (default false, read with `getattr` so your tests that skip
-`__init__` still pass) and `team/export_text.py` has `--method blend_interleave_gated`. A rebuilt
+`__init__` still pass) and `team/export/export_text.py` has `--method blend_interleave_gated`. A rebuilt
 `text_blend_interleave` has `"gate": false` and the same rankings. All 112 tests pass. Revert if you'd
 rather keep your files untouched; nothing else depends on it.
 
 ## Notebooks
 
-Fixed: `team/final_colab_text.ipynb` is deleted on `feat/smolvlm-gate`, `team/make_final_notebook.py`
+Fixed: `team/final_colab_text.ipynb` is deleted on `feat/smolvlm-gate`, `team/export/make_final_notebook.py`
 is back to `main`'s version (ranker only), and `team/README.md` names `notebooks/final_text_colab.ipynb`
-as the notebook for the final. `team/submission_regime.py` and `team/submission_fusion.py` stay as
+as the notebook for the final. `team/inference/submission_regime.py` and `team/inference/submission_fusion.py` stay as
 experiments; they use a word-pair smoothing that was never uploaded, so they aren't final candidates.
 
 ## Colab
@@ -45,14 +45,14 @@ experiments; they use a word-pair smoothing that was never uploaded, so they are
 This session isn't running it. Since the team lead's Drive already holds `MyDrive/starterkit` with
 your notebook, I suggest your side runs the final build; I've asked njunu17 to confirm with the team
 lead so that only one of you does. If the order check joins the final, it needs SigLIP in the ZIP:
-`team/export_order.py` shows the float16 export, and `team/submission_order.py` is the code.
+`team/export/export_order.py` shows the float16 export, and `team/inference/submission_order.py` is the code.
 
 ## The order probe
 
-`probe_order.zip` is built on njunu17's machine (`team/export_order.py --siglip-dir <siglip>
+`probe_order.zip` is built on njunu17's machine (`team/export/export_order.py --siglip-dir <siglip>
 --kit-submission <kit export>`; 709 MiB, 0.06 s per episode on an RTX 5070). Once its CSV exists:
 
-    python -m team.merge_bounds cuda/public_csv/text_blend.csv cuda/public_csv/text_style.csv \
+    python -m team.evaluation.merge_bounds cuda/public_csv/text_blend.csv cuda/public_csv/text_style.csv \
         --reverse-second --third cuda/public_csv/probe_order.csv
 
 The question to read: the share of episodes where it ranks the correct text first among those where

@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "team"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
 
 from submission_style import build_counts, combined_scores, interleaved, ranks, style_scores
 

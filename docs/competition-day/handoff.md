@@ -18,7 +18,7 @@ writes only our own file. Uploads and the choice of final stay with the humans.
 - **Two more options on this branch**, built on your `chars` code, so they merge cleanly with it. `blend_interleave_gated_own` takes the first pick in fired episodes from a candidate's own words only. `blend_interleave_gated_base_first` puts candidates with no own words first when the gate doesn't fire. The team lead has both ZIPs on their PC.
 - **Please use 0.644 as the bar, not 0.657.** A margin of +0.02 guards against noise, but expected private score is nearly flat for any bar from 0 to +0.0075, and +0.02 gives up about 0.001-0.003 (three priors, in `docs/experiments/validation.md` under "After the gate"). For base-first the bar is about 0.639, because it changes few episodes.
 - **Uploads, as far as I know:** excess and own are in, with no score reported to me yet. Still to go: `gated_chars` from you; the Colab ZIP and `gated_base_first` from the team lead.
-- **Second Colab build:** this one took about 3 minutes, so one can start as late as about 11:30. The Drive code matches `main` as of 10:27, so excess works as is. Own and base-first need `team/export_text.py`, `team/submission_text_rules.py` and `team/submission_chars.py` from this branch; chars also needs `package.py`, or its ZIP would miss `submission_chars.py`.
+- **Second Colab build:** this one took about 3 minutes, so one can start as late as about 11:30. The Drive code matches `main` as of 10:27, so excess works as is. Own and base-first need `team/export/export_text.py`, `team/inference/submission_text_rules.py` and `team/inference/submission_chars.py` from this branch; chars also needs `package.py`, or its ZIP would miss `submission_chars.py`.
 
 ## Update, 10:05: agreed on the final; the gated ZIPs are still open
 
@@ -33,7 +33,7 @@ is where the estimated +0.016 to +0.081 comes from. Only an upload can tell how 
 exactly 0.5958 would suggest it never fired.
 
 The team lead has both gated ZIPs on their PC and decides the uploads, so there's no need to rebuild them. This branch
-adds `blend_interleave_gated_excess` to `team/export_text.py`; `blend_interleave_gated` is unchanged.
+adds `blend_interleave_gated_excess` to `team/export/export_text.py`; `blend_interleave_gated` is unchanged.
 
 ## Update, 09:25: 0.5958 changes two things
 
@@ -51,7 +51,7 @@ unless the probe reaches 0.42, and a three-way merge from it would still need to
 
 ## Update, 09:15: please merge a fix to the final's code
 
-`team/submission_text_rules.py` imported `submission_style` inside `_order`, so during ranking, not at load. Every ZIP
+`team/inference/submission_text_rules.py` imported `submission_style` inside `_order`, so during ranking, not at load. Every ZIP
 that has run on the server imports its siblings at load. We can't see the runner, so I tested a stricter one: the
 artifact folder on `sys.path` only during load and `Submission()`. The 08:18 Colab ZIP below crashes with
 `ModuleNotFoundError`; with the import at the top of the file it ranks, and all 6,778 local rankings are identical.
@@ -109,16 +109,16 @@ We don't have `fill_central_v1` (public 0.5044; the site was down before it was 
 
 | Candidate | Build |
 |---|---|
-| `text_blend_interleave` | `python -m team.export_text --method blend_interleave --base-dir <kit export> --data-dir <Train> --output-dir <out>` |
-| `text_interleave` | The same with `--method interleave`. `python -m team.package_small` makes the 0.2 MiB ZIP |
-| `arbiter_v1` | `python -m team.export_arbiter --model-dir <ft_v1> --data-dir <Train> --kit-submission <kit export> --output-dir <out>` |
-| `unfamiliar_v1` | `python -m team.export_unfamiliar --model-dir <ft_v1> --kit-submission <kit export> --output-dir <out>` |
+| `text_blend_interleave` | `python -m team.export.export_text --method blend_interleave --base-dir <kit export> --data-dir <Train> --output-dir <out>` |
+| `text_interleave` | The same with `--method interleave`. `python -m team.export.package_small` makes the 0.2 MiB ZIP |
+| `arbiter_v1` | `python -m team.export.export_arbiter --model-dir <ft_v1> --data-dir <Train> --kit-submission <kit export> --output-dir <out>` |
+| `unfamiliar_v1` | `python -m team.export.export_unfamiliar --model-dir <ft_v1> --kit-submission <kit export> --output-dir <out>` |
 
-On Colab, `notebooks/final_text_colab.ipynb` (built by `team/make_text_notebook.py`) builds these except `unfamiliar_v1`,
+On Colab, `notebooks/final_text_colab.ipynb` (built by `team/export/make_text_notebook.py`) builds these except `unfamiliar_v1`,
 with `METHOD` in section 2. It's rehearsed locally, not yet run on a T4. From a clean `git archive` of `a776de3`: 113
 tests pass, and every ZIP's code and settings match the commit, apart from line endings (`core.autocrlf` is true here).
 
-**Not on GitHub.** At 07:57, `docs/experiments/audit.md`, `team/merge_bounds.py` and the order-check code aren't on any remote
+**Not on GitHub.** At 07:57, `docs/experiments/audit.md`, `team/evaluation/merge_bounds.py` and the order-check code aren't on any remote
 branch; `feat/smolvlm-gate` is at `b4ef369`. Please push them, so that I can read the probe and run the bounds too.
 
 ## What to recompute

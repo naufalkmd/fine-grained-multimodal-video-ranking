@@ -119,7 +119,7 @@ Chance is 0.375; one score's noise is about ±0.015-0.017, and paired comparison
 
 ## 5a. New since the first version of this audit
 
-**Order check (Fact, local).** `team/order_check.py` splits each candidate into events, scores
+**Order check (Fact, local).** `team/evaluation/order_check.py` splits each candidate into events, scores
 each event against each frame with SigLIP (no training), and compares the best total when events
 must take frames in their stated order with the total when they needn't. On 200 validation
 episodes:
@@ -136,7 +136,7 @@ Candidates that only reorder events share every event, so text preferences can't
 bias; the plain version is kept. About 0.07 s per episode on an RTX 5070. Unknown: how many test
 episodes have order-only negatives, and whether SigLIP sees order as well in the test's videos.
 
-As an upload, `cuda/probe_order.zip` (`team/submission_order.py`, 709 MiB, 0.06 s per episode)
+As an upload, `cuda/probe_order.zip` (`team/inference/submission_order.py`, 709 MiB, 0.06 s per episode)
 ranks by order fit alone. It is a probe, not a final rule: it scores only order, so content swaps
 fool it (150 episodes, right / wrong video: `reorder` 0.477 / 0.407, `swapped_action` 0.403 /
 0.476, `added_action` 0.555 / 0.521; one-event candidates tie and fall to centrality). What to
@@ -145,7 +145,7 @@ against about 20-25% by chance.
 
 **The team lead's merge analysis (`origin/main` 2bd6d28), checked so far:**
 
-Checked with `team/merge_bounds.py`, which enumerates all 4! x 4! placements of the negatives, on
+Checked with `team/evaluation/merge_bounds.py`, which enumerates all 4! x 4! placements of the negatives, on
 the public CSVs of centrality, `text_blend`, `text_style` and the rank sum (each CSV's mean matches
 its public score exactly):
 
@@ -155,14 +155,14 @@ its public score exactly):
 | Take-turns merging scores at least 0.5550 (centrality first) / 0.5639 (`text_blend` first) | **Verified exactly.** No assumption about the negatives: it is the minimum over every placement. Independent placements give 0.5803 / 0.5879, the best case 0.6213 / 0.6274 |
 | 0.5945 / 0.6016 at overlap 0.35, fitted to the rank sum's 0.5443 | Close: the fit gives 0.30 here and 0.5926 for centrality first. 16 episodes of the uploaded rank sum fall outside our tie-breaking, so the fit is rough; the bound above doesn't depend on it |
 | Letting SmolVLM swap the top two above a margin of 3 (`arbiter_v1`) adds about +0.005 | The lead's own estimate, now revised to about zero (SmolVLM's confident overrides lost 16:33 publicly). Agreed |
-| The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`notebooks/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/submission_regime.py` and `team/submission_fusion.py` use a different smoothing that was never uploaded |
+| The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`notebooks/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/inference/submission_regime.py` and `team/inference/submission_fusion.py` use a different smoothing that was never uploaded |
 
 So `text_blend_interleave` beats every uploaded rule even in its worst case, by +0.012 over
 `text_blend`, and probably by about +0.04. **Uploaded: 0.5958**, inside the predicted 0.59-0.60 and
 the best public score so far. The site now shows only the mean, no per-episode CSV, so later uploads
 can't be analysed episode by episode.
 
-**Training the order aligner (Fact, local).** `team/train_order.py` trains low-rank corrections and
+**Training the order aligner (Fact, local).** `team/training/train_order.py` trains low-rank corrections and
 a position prior on frozen SigLIP features, with the training descriptions as positives and code-made
 reorderings as negatives. Shuffling every event let the opening summary sentence give the order away
 and made validation worse (LLM-written order changes 0.605 → 0.443). Keeping the opening fixed and
@@ -178,7 +178,7 @@ within noise, so the untrained check is kept.
 | Does interleaving the two text signals gain? | Lead uploads `text_interleave` | 1 upload |
 | Can the frames tell event order on our data? | **Answered: yes, weakly** (section 5a) | Done |
 | Does the order check carry over to the test? | Upload it alone, then compare its CSV with centrality's | 1 upload |
-| Are the lead's merge numbers right? | `team/merge_bounds.py` on `text_style`'s and `text_blend`'s CSVs | Local, minutes, once the CSVs are shared |
+| Are the lead's merge numbers right? | `team/evaluation/merge_bounds.py` on `text_style`'s and `text_blend`'s CSVs | Local, minutes, once the CSVs are shared |
 
 ## 7. Strategy from here
 
@@ -187,7 +187,7 @@ within noise, so the untrained check is kept.
    above chance. Part of that may be structure rather than the frames: it favours candidates with
    fewer events even with the wrong video (see Status). It is weaker alone than either text signal
    (0.55, 0.53), so it shouldn't decide first place. Next upload:
-   `text_order_third.zip` (`team/submission_text_order.py`, `order_merge` "third"), which keeps
+   `text_order_third.zip` (`team/inference/submission_text_order.py`, `order_merge` "third"), which keeps
    `text_blend_interleave`'s top two and lets the order check fill places from third on. Expected
    gain is small (+0.005 to +0.02); final if it beats 0.5958. `text_blend_interleave_gated` is
    dropped: the gate does nothing on order-only negatives.

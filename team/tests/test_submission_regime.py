@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference"))
 
-from team.submission_regime import Submission
+from team.inference.submission_regime import Submission
 
 SHIRT = "A man is buttoning his shirt in front of the sofa."
 

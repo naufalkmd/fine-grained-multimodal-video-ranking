@@ -50,7 +50,7 @@ correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning
 
    Taking turns between the two rankings, and a gate that decides which goes first, gave the final rule.
 5. **Bounds before uploads.** With 30 leaderboard checks, we computed the worst case of a merge exactly from
-   the per-episode public results before uploading it (`team/merge_bounds.py`): taking turns could not score
+   the per-episode public results before uploading it (`team/evaluation/merge_bounds.py`): taking turns could not score
    below 0.5639, and it scored 0.5958.
 
 ## How the score improved
@@ -86,7 +86,7 @@ For each episode, from the five candidate texts alone:
    were edited from, and `text_blend`'s pick goes first. Otherwise reversed familiarity's pick goes first.
 4. **Interleave:** fill the ranking by taking the next unused candidate from each list in turn.
 
-It runs in about 0.02 s per episode. Code: `team/submission_text_rules.py` and `team/text_rules.py`.
+It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules.py` and `team/evaluation/text_rules.py`.
 
 ## Repository layout
 
@@ -94,9 +94,14 @@ It runs in about 0.02 s per episode. Code: `team/submission_text_rules.py` and `
 .
 ├── *.py, config.json      organizers' starter kit: baseline model, training, export, packaging, submission entry point
 ├── tests/                 the kit's tests
-├── team/                  our code (run with python -m team.<module> from the root); index in team/README.md
-│   ├── tests/             tests for our code
-│   └── siglip_ensemble/   SigLIP training and the three-seed ensemble
+├── team/                  our code, run from the root as python -m team.<folder>.<module>; index in team/README.md
+│   ├── candidates/        generated negatives and validation candidate sets
+│   ├── training/          trained rankers, SmolVLM fine-tuning, the order aligner
+│   ├── inference/         ranking rules that go into a submission ZIP (the final: submission_text_rules.py)
+│   ├── export/            build submission folders and the Colab notebooks
+│   ├── evaluation/        local checks and leaderboard analysis
+│   ├── siglip_ensemble/   SigLIP training and the three-seed ensemble
+│   └── tests/             tests for our code
 ├── notebooks/             Colab notebooks: the organizers' and our two final-build notebooks
 ├── docs/
 │   ├── starterkit/        the kit's docs in English, Korean originals in ko/
@@ -139,7 +144,7 @@ original list (Python 3.11, torch 2.5.1) and lacks packages our code needs, such
   experiments, the event-order check, merge bounds, the audit and the validation log
 - 한경훈 ([@opolo17](https://github.com/opolo17)): SigLIP training and the three-seed SigLIP ensemble
   (`team/siglip_ensemble/`)
-- 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`team/exp6_submission.py`)
+- 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`team/inference/exp6_submission.py`)
 
 The baseline code at the repository root is the organizers' starter kit; commit `a9a4179` is the kit as we
 received it.
