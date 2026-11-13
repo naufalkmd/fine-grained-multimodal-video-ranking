@@ -11,6 +11,9 @@ The more useful result is *why* it is text-only: every video model we built reac
 validation and fell to chance on the test set. The sections below explain what went wrong and what worked
 instead.
 
+**Technical report:** [*Text Beats Video on a Fine-Grained Video Ranking Task: Lessons from the InThon 2026
+Datathon*](docs/report/report.pdf) (5 pages, PDF), with the full method, every result and its limitations.
+
 ## The task
 
 | | |
@@ -130,7 +133,8 @@ It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules
 │   ├── competition/       the rules we worked under and their changes
 │   ├── experiments/       every experiment, the findings and the end-of-competition audit
 │   ├── competition-day/   handoff notes and the presentation outline
-│   ├── figures/           the README figures and the script that draws them
+│   ├── report/            the technical report: report.pdf and its LaTeX source
+│   ├── figures/           the README and report figures, and the script that draws them
 │   └── glossary.md        our method names and their standard names
 └── cuda/                  local GPU setup; data, models and outputs stay out of git
 ```
@@ -140,6 +144,7 @@ code imports the kit's `common.py` and `dataset.py`.
 
 | Start here | For |
 |---|---|
+| [docs/report/report.pdf](docs/report/report.pdf) | The technical report: method, results and limitations in 5 pages |
 | [team/README.md](team/README.md) | What each of our scripts does |
 | [docs/glossary.md](docs/glossary.md) | Our method names (used in the code and notes) and their standard names |
 | [docs/experiments/validation.md](docs/experiments/validation.md) | Every experiment: settings, validation data, local and public scores |
