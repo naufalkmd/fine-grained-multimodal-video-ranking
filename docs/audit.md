@@ -1,5 +1,9 @@
 # Audit: what we know, how sure we are, and what to do next
 
+> **After the competition:** the final upload was `text_blend_interleave_gated_own` (public 0.6385; see
+> [handoff.md](handoff.md), update 11:45), which scored 0.6408 on all 1,910 test episodes (private 0.6417).
+> The status below is as written at 11:20 on the day.
+
 ## Status at a glance (11:20 KST): final plan
 
 - **Final: `text_blend_interleave_gated`, public 0.6368, built on Colab at 10:51** (run

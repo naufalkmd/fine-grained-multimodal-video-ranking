@@ -13,10 +13,13 @@ performance.
 
 ## Download the submitted model
 
-[`siglip_minimal_3seed_submission.zip`](siglip_minimal_3seed_submission.zip) is
-stored with **Git LFS** because it is 379,382,302 bytes. Download the original file
-from its GitHub file page, or clone with Git LFS and run `git lfs pull`.
-Do not submit the small LFS pointer text file or the repository's source archive.
+`siglip_minimal_3seed_submission.zip` (379,382,302 bytes, stored with **Git LFS**) was
+removed from the current tree after the competition so that clones stay small. It is kept
+in the history at commit `1cd0063`: download it from
+[its file page at that commit](https://github.com/naufalkmd/fine-grained-multimodal-video-ranking/blob/1cd0063/team/kyounghoon/siglip_minimal_3seed_submission.zip),
+or run `git checkout 1cd0063 -- team/kyounghoon/siglip_minimal_3seed_submission.zip`
+followed by `git lfs pull`. Do not submit the small LFS pointer text file or the
+repository's source archive.
 
 SHA256:
 
