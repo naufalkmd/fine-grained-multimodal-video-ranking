@@ -26,6 +26,11 @@ The organizers' examples show what makes it hard. The wrong candidates describe 
 correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning") or an added action
 ("... and then sits down"). Telling them apart needs the order of events in the video, not just its content.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/task_dark.png">
+  <img alt="One episode: eight video frames along a time axis, and five candidate descriptions of a person buttoning a shirt and picking up a cup. Four are wrong in one detail each, highlighted: a reversed action (unbuttoning), an added action (and then sits down), the two events in the other order, and a swapped object (jacket)." src="docs/figures/task_light.png">
+</picture>
+
 ## What we learned
 
 1. **Local validation measured the wrong skill.** With no wrong descriptions in the training data, we made
@@ -54,6 +59,11 @@ correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning
    below 0.5639, and it scored 0.5958.
 
 ## How the score improved
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/scores_dark.png">
+  <img alt="Dot plot of the public leaderboard score at each step, with chance at 0.375. Methods that use the video score 0.35 to 0.47; text-only rules score 0.53 to 0.64, rising from centrality (0.5515) through taking turns (0.5958) to the final rule (0.6385)." src="docs/figures/scores_light.png">
+</picture>
 
 | Submission (public leaderboard) | Uses the video | Public |
 |---|---|---:|
@@ -107,7 +117,8 @@ It runs in about 0.02 s per episode. Code: `team/inference/submission_text_rules
 │   ├── starterkit/        the kit's docs in English, Korean originals in ko/
 │   ├── competition/       the rules we worked under and their changes
 │   ├── experiments/       every experiment, the findings and the end-of-competition audit
-│   └── competition-day/   handoff notes and the presentation outline
+│   ├── competition-day/   handoff notes and the presentation outline
+│   └── figures/           the README figures and the script that draws them
 └── cuda/                  local GPU setup; data, models and outputs stay out of git
 ```
 
