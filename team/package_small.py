@@ -1,7 +1,7 @@
 """Package an exported text-rule submission with only the files it loads, so that it uploads in seconds.
 
 package.py also requires the kit's encoders, which `text_interleave` never loads. The server contract needs only
-submission.py at the top of the ZIP (SERVER_COMPATIBILITY.md), so this leaves them out. The rankings don't change.
+submission.py at the top of the ZIP (docs/starterkit/SERVER_COMPATIBILITY.md), so this leaves them out. The rankings don't change.
 
     python -m team.package_small --submission-dir cuda/text_interleave_submission \
         --output cuda/text_interleave_small.zip

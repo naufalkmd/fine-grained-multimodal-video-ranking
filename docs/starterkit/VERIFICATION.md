@@ -1,6 +1,6 @@
 # Run verification record
 
-> English translation. The organizers' Korean original is in [docs/ko/VERIFICATION.md](docs/ko/VERIFICATION.md).
+> English translation. The organizers' Korean original is in [docs/starterkit/ko/VERIFICATION.md](ko/VERIFICATION.md).
 
 Performed on 2026-10-29. Only the original `data/Train` was read, and `data/Test` was not used.
 Server code, production settings and original data were not changed.

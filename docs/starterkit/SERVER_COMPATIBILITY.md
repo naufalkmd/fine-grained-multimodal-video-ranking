@@ -1,6 +1,6 @@
 # Server compatibility
 
-> English translation. The organizers' Korean original is in [docs/ko/SERVER_COMPATIBILITY.md](docs/ko/SERVER_COMPATIBILITY.md).
+> English translation. The organizers' Korean original is in [docs/starterkit/ko/SERVER_COMPATIBILITY.md](ko/SERVER_COMPATIBILITY.md).
 
 ## Confirmed submission contract
 

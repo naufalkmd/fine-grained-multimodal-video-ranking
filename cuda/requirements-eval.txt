@@ -1,4 +1,4 @@
-# Evaluation environment from docs/brief.md, for an NVIDIA GPU on Windows or Linux.
+# Evaluation environment from docs/competition/brief.md, for an NVIDIA GPU on Windows or Linux.
 #
 #   conda create -n inthon python=3.12.3 -y
 #   conda activate inthon

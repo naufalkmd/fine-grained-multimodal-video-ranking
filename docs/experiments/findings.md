@@ -252,7 +252,7 @@ All passed `validate.py`.
 
 - Data, shared on Drive rather than git: `candidates_v3.jsonl` (4,170 episodes, 5.9 MB) and
   `candidates_qwen.json` (validation candidates with the `qwen` set). Commands are in
-  [team/README.md](../team/README.md).
+  [team/README.md](../../team/README.md).
 - Measured on an RTX 5070 in float16: 4.02 B parameters, peak 8.6 GiB allocated at batch 16, so it
   fits a T4 (16 GB). The installed torch includes sm_75 (T4), and attention runs as SDPA, which T4
   supports. 4,170 episodes took 35 minutes; a T4 should take about 2 to 4 times longer.

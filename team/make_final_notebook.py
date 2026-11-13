@@ -1,4 +1,4 @@
-"""Build team/final_colab.ipynb from the organizers' notebook, so that their cells stay in one place.
+"""Build notebooks/final_colab.ipynb from the organizers' notebook, so that their cells stay in one place.
 
 Environment, data and model cells are reused. Only the training, validation and export cells change.
 
@@ -117,7 +117,7 @@ def replace_once(text, old, new):
 
 
 def main():
-    notebook = json.loads((ROOT / "starterkit_colab.ipynb").read_text(encoding="utf-8"))
+    notebook = json.loads((ROOT / "notebooks/starterkit_colab.ipynb").read_text(encoding="utf-8"))
     cells = {cell["id"]: cell for cell in notebook["cells"]}
 
     def get(cell_id):
@@ -155,7 +155,7 @@ def main():
                     "Edit the code on Drive, then start a new experiment from cell 2. A copy of the code used "
                     "for each run stays in its `source/` folder. If CUDA runs out of memory, lower the batch "
                     "sizes in cell 2.")
-    output = ROOT / "team/final_colab.ipynb"
+    output = ROOT / "notebooks/final_colab.ipynb"
     output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"Wrote {output}")
 

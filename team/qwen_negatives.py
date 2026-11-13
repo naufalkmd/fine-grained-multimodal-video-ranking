@@ -3,7 +3,7 @@
 For each episode, the model rewrites the description as one short sentence (the positive) and makes
 single-change variants of that sentence (the negatives), the kind of near-identical candidates the
 test set appears to use. The model only generates text. Every filter is a code rule on the text,
-never a model judgment or score, so none of this is distillation (docs/brief.md). The prompt has no
+never a model judgment or score, so none of this is distillation (docs/competition/brief.md). The prompt has no
 example sentences, so no hand-written description reaches the data.
 
 Runs in float16 on one T4 (16 GB), which has no bfloat16. The output JSONL keeps the prompt version,

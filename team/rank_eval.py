@@ -2,7 +2,7 @@
 
 Also checks the checks: the scoring code against known scorers, whether generated negatives can be
 spotted from text alone, and whether the model's scores respond to frame order. See
-docs/validation.md. These scores depend on our generated negatives and are not leaderboard scores.
+docs/experiments/validation.md. These scores depend on our generated negatives and are not leaderboard scores.
 """
 
 import argparse

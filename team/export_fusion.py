@@ -22,7 +22,7 @@ from team.submission_central import words
 
 SIGNALS = ("centrality", "unfamiliar_words", "unfamiliar_chars", "short")
 CHAR_ORDER = 5
-# Public shares of episodes with the correct text at ranks 1-5 (docs/validation.md).
+# Public shares of episodes with the correct text at ranks 1-5 (docs/experiments/validation.md).
 PUBLIC_RANK_SHARES = {
     "centrality": [0.408, 0.164, 0.175, 0.140, 0.113],
     "unfamiliar_words": [0.353, 0.239, 0.182, 0.122, 0.105],

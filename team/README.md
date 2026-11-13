@@ -7,8 +7,8 @@ with `python -m`, so that it can import the kit's modules.
 
 | Location | Contents |
 |---|---|
-| Repository root, `tests/`, `docs/ko/` | The organizers' starter kit, with an English translation of its docs |
-| `docs/brief.md`, `docs/validation.md`, `AGENTS.md`, `CLAUDE.md` | Our rules summary and working instructions |
+| Repository root, `tests/`, `docs/starterkit/`, `notebooks/starterkit_colab.ipynb` | The organizers' starter kit, with an English translation of its docs |
+| `docs/competition/brief.md`, `docs/experiments/validation.md`, `AGENTS.md`, `CLAUDE.md` | Our rules summary and working instructions |
 | `team/` | Our code that isn't part of the submission |
 | `cuda/` | Local GPU setup and local files. Data, models and outputs stay out of git |
 
@@ -58,7 +58,7 @@ the reason.
 - `export_ranker.py`: creates a submission folder from a `train_ranker.py` checkpoint.
 - `compare_public.py`: compares public per-episode CSVs with a baseline (paired difference, sign
   test, rank moves). Keep the CSVs in `cuda/public_csv/`, which git ignores.
-- `final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
+- `notebooks/final_colab.ipynb`: produces the final model on a T4. Built from the organizers' notebook by
   `make_final_notebook.py`, so edit that script rather than the notebook.
 - `submission_siglip.py`, `export_siglip.py`: ranks with SigLIP's image-text match, with no training.
 - `submission_siglip_central.py`: adds SigLIP and centrality ranks, weighted by `central_rank_weight`.
@@ -96,7 +96,7 @@ the reason.
   descriptions. `style_sign` -1 favours the least familiar, and `merge` takes turns with centrality.
 - `export_text.py`: creates `text_blend`, `text_interleave` or `text_blend_interleave`.
 - `package_small.py`: packages `text_interleave` without the kit's encoders, which it never loads.
-- `final_text_colab.ipynb`: **the notebook for the final.** Produces those finals, or `arbiter`, on a
+- `notebooks/final_text_colab.ipynb`: **the notebook for the final.** Produces those finals, or `arbiter`, on a
   T4, with the word-pair familiarity measured publicly. Built from the organizers' notebook by
   `make_text_notebook.py`, so edit that script rather than the notebook.
 - `submission_fill.py`, `export_fill.py`: SmolVLM's support from the frames on only the tokens that

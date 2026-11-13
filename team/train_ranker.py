@@ -3,7 +3,7 @@
 Every run selects its checkpoint with the same rule, so that runs stay comparable: the clean rank
 score (the 5-candidate score on SELECTION_SETS, which have no detected text leak), averaged with
 order pairing. These scores depend on our generated negatives and are not leaderboard scores. See
-docs/validation.md.
+docs/experiments/validation.md.
 """
 
 import argparse
@@ -370,7 +370,7 @@ def main():
         parser.error(f"Unknown negative types: {sorted(unknown)}")
     held_out = [name for name in NEGATIVE_TYPES if name not in train_types]
     if not held_out:
-        parser.error("Hold at least one negative type out of training (docs/validation.md).")
+        parser.error("Hold at least one negative type out of training (docs/experiments/validation.md).")
     if (args.output_dir / "best.pt").exists() and not args.report_only:
         raise FileExistsError(f"Use a new --output-dir; a run exists: {args.output_dir}")
     config = load_config(args.config)

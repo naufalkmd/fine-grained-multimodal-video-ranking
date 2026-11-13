@@ -1,7 +1,7 @@
 # Local GPU work
 
 Everything for running on a personal NVIDIA GPU lives here. The team's main
-environment is the provided Colab, using `starterkit_colab.ipynb`.
+environment is the provided Colab, using `notebooks/starterkit_colab.ipynb`.
 
 Git tracks only `README.md`, `config.json` and `requirements-eval.txt`. `Data/`,
 `models/` and `outputs/` stay local.

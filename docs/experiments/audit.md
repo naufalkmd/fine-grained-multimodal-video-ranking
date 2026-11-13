@@ -1,7 +1,7 @@
 # Audit: what we know, how sure we are, and what to do next
 
 > **After the competition:** the final upload was `text_blend_interleave_gated_own` (public 0.6385; see
-> [handoff.md](handoff.md), update 11:45), which scored 0.6408 on all 1,910 test episodes (private 0.6417).
+> [handoff.md](../competition-day/handoff.md), update 11:45), which scored 0.6408 on all 1,910 test episodes (private 0.6417).
 > The status below is as written at 11:20 on the day.
 
 ## Status at a glance (11:20 KST): final plan
@@ -11,7 +11,7 @@
   that Colab ZIP and check it scores 0.6368. If nothing else is settled by 11:40, it is the final.
 - **Candidates already uploaded or pending: `gated_excess`, `gated_own`, `gated_base_first`.**
   Replace the final only at 0.644 or more (0.639 for base-first, which changes few episodes), the
-  lead's bar from a decision analysis in `docs/validation.md` ("After the gate"). With several
+  lead's bar from a decision analysis in `docs/experiments/validation.md` ("After the gate"). With several
   candidates tried, take only the highest one above the bar; don't go lower. A replacement is
   rebuilt on Colab with its `METHOD` (about 3 minutes, start by 11:30) and uploaded to confirm.
 - **Results (11:20): `gated_excess` 0.6206 (-0.016), `gated_own` 0.6385 (+0.0017, reported as
@@ -31,7 +31,7 @@ Levels used: **Fact** (documented or measured), **Strong** (follows from facts w
 another reading), **Weak** (one reading among several), **Retracted** (we said it; it was wrong or
 unsupported).
 
-Sources: [brief.md](brief.md), the organizers' README (`docs/ko/README.md`), `cuda/Data/Train/README.md`
+Sources: [brief.md](../competition/brief.md), the organizers' README (`docs/starterkit/ko/README.md`), `cuda/Data/Train/README.md`
 and `manifest.json`, `SERVER_COMPATIBILITY.md`, [validation.md](validation.md) (including the team
 lead's sections on `origin/feat/fill-in-blank`), [findings.md](findings.md), and the public CSVs in
 `cuda/public_csv/`.
@@ -48,7 +48,7 @@ lead's sections on `origin/feat/fill-in-blank`), [findings.md](findings.md), and
 - Test: a different benchmark, 1 correct + 4 wrong candidates. Slide examples: a reversed action
   ("buttoning" / "unbuttoning") and an added action ("and then sits down"). **The organizers'
   README also says random negatives "do not represent hard wrong answers that only change the order
-  of events"** (`docs/ko/README.md`, evaluation section). Nothing says who wrote the test text.
+  of events"** (`docs/starterkit/ko/README.md`, evaluation section). Nothing says who wrote the test text.
 - Constraints: 15 minutes for 1,910 episodes on a T4, ZIP up to 1 GiB, the four permitted models,
   only organizers' data plus reproducible augmentation, no distillation, final model made on Colab.
 
@@ -155,7 +155,7 @@ its public score exactly):
 | Take-turns merging scores at least 0.5550 (centrality first) / 0.5639 (`text_blend` first) | **Verified exactly.** No assumption about the negatives: it is the minimum over every placement. Independent placements give 0.5803 / 0.5879, the best case 0.6213 / 0.6274 |
 | 0.5945 / 0.6016 at overlap 0.35, fitted to the rank sum's 0.5443 | Close: the fit gives 0.30 here and 0.5926 for centrality first. 16 episodes of the uploaded rank sum fall outside our tie-breaking, so the fit is rough; the bound above doesn't depend on it |
 | Letting SmolVLM swap the top two above a margin of 3 (`arbiter_v1`) adds about +0.005 | The lead's own estimate, now revised to about zero (SmolVLM's confident overrides lost 16:33 publicly). Agreed |
-| The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`team/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/submission_regime.py` and `team/submission_fusion.py` use a different smoothing that was never uploaded |
+| The final candidates' code | **Committed** by the lead (`af829bc`) and merged here, with its own Colab notebook (`notebooks/final_text_colab.ipynb`). The style score there (bigram 0.8 + add-one unigram 0.2, with an end token) is the one measured publicly; `team/submission_regime.py` and `team/submission_fusion.py` use a different smoothing that was never uploaded |
 
 So `text_blend_interleave` beats every uploaded rule even in its worst case, by +0.012 over
 `text_blend`, and probably by about +0.04. **Uploaded: 0.5958**, inside the predicted 0.59-0.60 and
@@ -192,6 +192,6 @@ within noise, so the untrained check is kept.
    gain is small (+0.005 to +0.02); final if it beats 0.5958. `text_blend_interleave_gated` is
    dropped: the gate does nothing on order-only negatives.
 3. Spend remaining uploads on information: shortness, characters.
-4. Build the final on Colab by 10:30 with the lead's `team/final_text_colab.ipynb` (it builds
+4. Build the final on Colab by 10:30 with the lead's `notebooks/final_text_colab.ipynb` (it builds
    `text_blend_interleave` with the measured style score), adding SigLIP only if the order check
    is in.

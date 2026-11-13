@@ -1,6 +1,6 @@
 # Organizers' baseline starter kit (InThon 2026)
 
-> English translation. The organizers' Korean original is in [docs/ko/README.md](ko/README.md).
+> English translation. The organizers' Korean original is in [docs/starterkit/ko/README.md](ko/README.md).
 
 An example of training, validation and submission using only the original Train data. It uses
 Python 3.11 and the permitted `facebook/dinov2-base` and
@@ -153,7 +153,7 @@ python validate.py --zip sample_submission.zip --server-dir ../server --device c
 This check prepares inputs taken from the original Train set in a temporary directory, and runs the
 server's `runner/execute.py` with an empty HF cache and a separate CWD. It does not read Test data.
 The current server's runtime and upload limits, and the settings needed for model submissions, are
-summarized in [SERVER_COMPATIBILITY.md](../SERVER_COMPATIBILITY.md).
+summarized in [SERVER_COMPATIBILITY.md](SERVER_COMPATIBILITY.md).
 
 ## Where to make changes
 

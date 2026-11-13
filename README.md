@@ -70,7 +70,7 @@ correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning
 One public score is uncertain by about ±0.016, so the last step (+0.0017) is within noise; it became the
 final because it was the highest score. On the private 70% the final scored 0.6417, slightly above its
 public score, so the rule did not overfit the public leaderboard. Every number, with its settings and the validation data behind
-it, is in [docs/validation.md](docs/validation.md).
+it, is in [docs/experiments/validation.md](docs/experiments/validation.md).
 
 ## Final method
 
@@ -90,23 +90,41 @@ It runs in about 0.02 s per episode. Code: `team/submission_text_rules.py` and `
 
 ## Repository layout
 
-| Location | Contents |
+```text
+.
+├── *.py, config.json      organizers' starter kit: baseline model, training, export, packaging, submission entry point
+├── tests/                 the kit's tests
+├── team/                  our code (run with python -m team.<module> from the root); index in team/README.md
+│   ├── tests/             tests for our code
+│   └── kyounghoon/        SigLIP training and the three-seed ensemble
+├── notebooks/             Colab notebooks: the organizers' and our two final-build notebooks
+├── docs/
+│   ├── starterkit/        the kit's docs in English, Korean originals in ko/
+│   ├── competition/       the rules we worked under and their changes
+│   ├── experiments/       every experiment, the findings and the end-of-competition audit
+│   └── competition-day/   handoff notes and the presentation outline
+└── cuda/                  local GPU setup; data, models and outputs stay out of git
+```
+
+The kit's modules stay at the root because the submission ZIP needs `submission.py` at its top level and our
+code imports the kit's `common.py` and `dataset.py`.
+
+| Start here | For |
 |---|---|
-| Repository root, `tests/` | The organizers' starter kit (baseline model, export and packaging), translated to English: [docs/starterkit.md](docs/starterkit.md); Korean original in `docs/ko/` |
-| `team/` | Our code: negative generation, video rankers, SigLIP and SmolVLM experiments, the order check, the text rules, merge bounds, export scripts and the Colab notebook for the final build. Index in [team/README.md](team/README.md) |
-| `docs/brief.md` | The competition rules we worked under |
-| `docs/validation.md` | Every experiment: settings, validation data, local and public scores |
-| `docs/audit.md` | The end-of-competition review: each claim graded as fact, strong, weak or retracted |
-| `docs/findings.md`, `docs/handoff*.md` | Working notes from the competition day |
+| [team/README.md](team/README.md) | What each of our scripts does |
+| [docs/experiments/validation.md](docs/experiments/validation.md) | Every experiment: settings, validation data, local and public scores |
+| [docs/experiments/audit.md](docs/experiments/audit.md) | The end-of-competition review: each claim graded as fact, strong, weak or retracted |
+| [docs/competition/brief.md](docs/competition/brief.md) | The competition rules we worked under |
+| [docs/starterkit/README.md](docs/starterkit/README.md) | The organizers' baseline and how a submission is built |
 
 ## Reproducing the final submission
 
 The competition data is the organizers' and is not included. With it in Google Drive at
 `MyDrive/data/Train.zip`:
 
-1. Open `team/final_text_colab.ipynb` in Colab (T4 runtime).
-2. In section 2, set `METHOD = "blend_interleave_gated_own"` (the final rule), then run all cells. The notebook downloads the permitted
-   models, builds the submission ZIP (about 349 MiB) and records the run.
+1. Open `notebooks/final_text_colab.ipynb` in Colab (T4 runtime).
+2. In section 2, set `METHOD = "blend_interleave_gated_own"` (the final rule), then run all cells. The notebook
+   downloads the permitted models, builds the submission ZIP (about 349 MiB) and records the run.
 
 Locally (Python 3.11): `pip install -r requirements.txt`, `python download_models.py`, then the export
 scripts in `team/` (see [team/README.md](team/README.md)).
@@ -119,7 +137,7 @@ scripts in `team/` (see [team/README.md](team/README.md)).
   experiments, the event-order check, merge bounds, the audit and the validation log
 - 한경훈 ([@opolo17](https://github.com/opolo17)): SigLIP training and the three-seed SigLIP ensemble
   (`team/kyounghoon/`)
-- 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`exp6_submission.py`)
+- 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`team/exp6_submission.py`)
 
 The baseline code at the repository root is the organizers' starter kit; commit `a9a4179` is the kit as we
 received it.

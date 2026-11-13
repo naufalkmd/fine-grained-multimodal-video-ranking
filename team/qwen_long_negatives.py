@@ -1,7 +1,7 @@
 """Test-like validation candidates: full-length descriptions with plausible errors written by an LLM.
 
 The test's negatives seem to be natural-sounding edits of full descriptions, probably written by an
-LLM (docs/validation.md, "Writing style and its reversal"). Our rule-based negatives behave
+LLM (docs/experiments/validation.md, "Writing style and its reversal"). Our rule-based negatives behave
 differently on wording, so this asks a local Qwen3-4B-Instruct to rewrite each validation
 description into four versions that no longer match the video, either keeping most of the wording
 (`--style edit`) or rewording it (`--style rewrite`). The prompt names kinds of change but no words

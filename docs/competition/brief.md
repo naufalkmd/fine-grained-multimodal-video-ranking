@@ -6,7 +6,7 @@ in Notion. This is not the full rule text.
 
 - The official Korean rules take precedence if wording is unclear.
 - Organizers post corrections in the KakaoTalk group. When one changes a rule,
-  update Notion and this file together, and record the change in `docs/log.md`.
+  update Notion and this file together, and record the change in `docs/competition/rule_changes.md`.
 - The scoring site login and the organizers' contact details are in Notion. Do
   not add them to this repo.
 
