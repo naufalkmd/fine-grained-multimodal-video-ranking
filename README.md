@@ -1,180 +1,125 @@
-# Inthon baseline starter kit
+# Fine-grained multimodal video ranking
 
-> English translation. The organizers' Korean original is in [docs/ko/README.md](docs/ko/README.md).
+Team 07's entry to the **InThon 2026 Datathon** (final submission November 1, 2026). Given the frames of a short
+video and five candidate descriptions that differ in a single detail, rank the descriptions from most to
+least likely.
 
-An example of training, validation and submission using only the original Train data. It uses
-Python 3.11 and the permitted `facebook/dinov2-base` and
-`sentence-transformers/all-mpnet-base-v2`.
+**Result:** **0.6408 on all 1,910 test episodes** (chance 0.375) with a text-only ranking rule: 0.6385 on
+the public 30% and 0.6417 on the private 70%. The organizers reported the combined score; the private
+score follows from it and the public one.
+The more useful result is *why* it is text-only: every video model we built reached about 0.8 on our own
+validation and fell to chance on the test set. The sections below explain what went wrong and what worked
+instead.
 
-## Method
+## The task
 
-1. Encode every image in an episode separately with DINOv2. **Mean-pool** the per-frame CLS
-   features to get a 768-dimensional image sequence feature.
-2. Encode the original description with MPNet and take the token mean pooling, excluding padding,
-   to get a 768-dimensional text feature.
-3. **Concat** the two features and apply `Linear(1536, 256) → ReLU → Dropout → Linear(256, 1)`.
-   The sigmoid output is a scalar in the 0–1 range for each video–description pair.
-4. In every epoch, each training episode uses its one correct description (label 1) and **one
-   original description picked at random from another training episode** (label 0). Descriptions
-   identical to the episode's own are excluded from negatives. It does not generate images or
-   text, and does not write new episode files.
-5. Both encoders are frozen and only the MLP is trained. For numerical stability, training applies
-   `BCEWithLogitsLoss` to the logits before the sigmoid, and inference returns sigmoid scores.
+| | |
+|---|---|
+| Input per episode | 8–20 RGB frames and 5 candidate descriptions (about 60 words each) |
+| Output | The 5 candidates in ranked order |
+| Score per episode | 1, 0.5, 0.25, 0.125, 0 for the correct description at rank 1–5; the leaderboard is the mean |
+| Training data | 4,170 episodes from the PerceptionTest video benchmark, **one correct description each, no wrong ones** |
+| Test data | 1,910 episodes from a **different benchmark** (30% public, 70% private), 1 correct + 4 wrong candidates |
+| Constraints | Only four permitted pretrained models (DINOv2-base, all-mpnet-base-v2, SigLIP-base, SmolVLM-256M); inference for all 1,910 episodes in 15 minutes on one T4, offline; submission ZIP ≤ 1 GB; no distillation from other models; final model built on Colab |
 
-Images are read in numeric order, with only a fixed resize, center crop and normalization applied.
-It does not use random image transforms, frame reduction, description changes or teacher
-predictions. Mean pooling is order-invariant, so this baseline has no temporal-order reasoning
-module of its own. The sigmoid value is a learned matching score and is not guaranteed to be a
-calibrated probability.
+The organizers' examples show what makes it hard. The wrong candidates describe the *same* scene as the
+correct one and change one thing: a reversed action ("buttoning" vs "unbuttoning") or an added action
+("... and then sits down"). Telling them apart needs the order of events in the video, not just its content.
 
-## Installation and data
+## What we learned
 
-Run the commands below from `starterkit/`. On a T4, use a PyTorch environment that supports CUDA.
-On Colab, where PyTorch is already installed, first check compatibility with the existing CUDA
-environment.
+1. **Local validation measured the wrong skill.** With no wrong descriptions in the training data, we made
+   our own: mostly other videos' descriptions. A model passes those by matching objects in the scene. That
+   skill is useless when all five candidates describe the same scene, so models at about 0.8 locally scored
+   0.35–0.40 on the public set.
+2. **Sentence embeddings hide one-word differences.** A one-word edit of a 60-word description keeps its
+   MPNet embedding at cosine similarity 0.983 on average. Any model that compares one sentence vector with
+   the video cannot see the edit.
+3. **Every image signal that changed the text ranking lost.** Trained video rankers, SigLIP ensembles and
+   a fine-tuned SmolVLM all scored at or below the text-only rules. The one image method with a real
+   order signal, a training-free check that a candidate's events match the frames in their stated order
+   (SigLIP per event, dynamic programming over frames), scored 0.4295 alone, above chance, but added
+   nothing when combined.
+4. **The candidates' text carries signal of its own.** Two text-only scores worked, and they were
+   uncorrelated per episode:
+   - **Centrality:** the candidate most similar to the other four comes first. If the wrong
+     candidates are edits of the correct one, the correct one is the text they share.
+   - **Reversed familiarity:** the candidate whose wording is *least* like the training descriptions comes
+     first (a word-bigram model fitted on the training text). Ranking the most familiar first scored
+     0.2411, far below chance, so the direction itself is a measured fact; its cause is not known.
 
-```bash
-python -m pip install -r requirements.txt
-python download_models.py
-```
+   Taking turns between the two rankings, and a gate that decides which goes first, gave the final rule.
+5. **Bounds before uploads.** With 30 leaderboard checks, we computed the worst case of a merge exactly from
+   the per-episode public results before uploading it (`team/merge_bounds.py`): taking turns could not score
+   below 0.5639, and it scored 0.5958.
 
-If you already have **the same permitted models** locally, you can copy them instead of
-downloading.
+## How the score improved
 
-```bash
-python download_models.py --source-root /path/to/model_snapshots
-```
+| Submission (public leaderboard) | Uses the video | Public |
+|---|---|---:|
+| Organizers' baseline, trained video rankers, SigLIP ensemble | Yes | 0.347–0.397 |
+| Pretrained SigLIP + centrality | Yes | 0.4682 |
+| Event-order check alone (SigLIP) | Yes | 0.4295 |
+| Reversed familiarity alone | No | 0.5327 |
+| Centrality alone | No | 0.5515 |
+| Centrality, three measures combined (`text_blend`) | No | 0.5521 |
+| Take turns: `text_blend` and reversed familiarity | No | 0.5958 |
+| + gate: reversed familiarity first when no candidate looks like the one the others were edited from | No | 0.6368 |
+| + gate uses familiarity of each candidate's own words (**final**) | No | **0.6385** |
 
-This path must contain the config, safetensors and processor/tokenizer files under `dinov2/` and
-`mpnet/`. The default settings are in `config.json`, and its paths are resolved relative to that
-config file's location. Paths passed on the CLI are relative to the current working directory.
+One public score is uncertain by about ±0.016, so the last step (+0.0017) is within noise; it became the
+final because it was the highest score. On the private 70% the final scored 0.6417, slightly above its
+public score, so the rule did not overfit the public leaderboard. Every number, with its settings and the validation data behind
+it, is in [docs/validation.md](docs/validation.md).
 
-The data format is as follows. `description.json` and annotations of wrong answers are not
-required.
+## Final method
 
-```text
-data/Train/
-  episode_1/
-    description.txt
-    images/1.jpg, 2.jpg, ..., 10.jpg, ...
-  episode_2/
-    ...
-```
+For each episode, from the five candidate texts alone:
 
-## Training and local evaluation
+1. **`text_blend`:** rank by centrality, as the sum of three ranks: the share of each candidate's words
+   found in the other candidates, its mean MPNet similarity to them, and word-sequence similarity.
+2. **Reversed familiarity:** rank by how *unlike* the training descriptions each candidate's wording is,
+   from a word-bigram model fitted on the training text. When the gate below fires, only the word pairs
+   that touch a candidate's own words (words that match nothing in the other candidates under a
+   word-by-word alignment) are scored.
+3. **Gate:** if some candidate has all its words in the others, it looks like the base text the others
+   were edited from, and `text_blend`'s pick goes first. Otherwise reversed familiarity's pick goes first.
+4. **Interleave:** fill the ranking by taking the next unused candidate from each list in turn.
 
-```bash
-python train.py --device auto
-python evaluate.py --checkpoint outputs/baseline/best.pt
-```
+It runs in about 0.02 s per episode. Code: `team/submission_text_rules.py` and `team/text_rules.py`.
 
-- By default, the full Train set is split 80:20 by episode. The seed is 2026.
-- Train and validation IDs are recorded in `outputs/baseline/splits.json`. Splitting is never done
-  by frame.
-- Negatives are drawn only from within each split. Training negatives are redrawn every epoch, and
-  validation negatives are fixed. With N training episodes per epoch, there are exactly 2N training
-  pairs.
-- Frozen encoder features are saved to `features.pt` and the MLP is trained on them. If the data or
-  encoder files change, the existing cache is refused.
-- The checkpoint with the lowest validation BCE is saved to `best.pt`. Existing experiments are
-  not overwritten, so specify `--output-dir outputs/another_name` when rerunning.
-- Without a GPU, you can run with `--device cpu`. Full feature extraction takes time.
+## Repository layout
 
-To check quickly that it works, use the following commands first.
+| Location | Contents |
+|---|---|
+| Repository root, `tests/` | The organizers' starter kit (baseline model, export and packaging), translated to English: [docs/starterkit.md](docs/starterkit.md); Korean original in `docs/ko/` |
+| `team/` | Our code: negative generation, video rankers, SigLIP and SmolVLM experiments, the order check, the text rules, merge bounds, export scripts and the Colab notebook for the final build. Index in [team/README.md](team/README.md) |
+| `docs/brief.md` | The competition rules we worked under |
+| `docs/validation.md` | Every experiment: settings, validation data, local and public scores |
+| `docs/audit.md` | The end-of-competition review: each claim graded as fact, strong, weak or retracted |
+| `docs/findings.md`, `docs/handoff*.md` | Working notes from the competition day |
 
-```bash
-python train.py --max-episodes 12 --epochs 3 --output-dir outputs/smoke
-python evaluate.py --checkpoint outputs/smoke/best.pt
-```
+## Reproducing the final submission
 
-The output metrics are `binary_accuracy` over the two pairs, `pair_accuracy` (the share of cases
-where the correct description scores higher than the random negative), and BCE. Ties do not count
-as correct pairs. These metrics are **not the leaderboard multiple-choice accuracy**. A description
-from another video can be partly correct, and random negatives do not represent hard wrong answers
-that only change the order of events. Train and test also come from different sources, so this
-validation performance alone does not guarantee generalization.
+The competition data is the organizers' and is not included. With it in Google Drive at
+`MyDrive/data/Train.zip`:
 
-## Creating a submission
+1. Open `team/final_text_colab.ipynb` in Colab (T4 runtime).
+2. In section 2, set `METHOD = "blend_interleave_gated_own"` (the final rule), then run all cells. The notebook downloads the permitted
+   models, builds the submission ZIP (about 349 MiB) and records the run.
 
-```bash
-python export.py --checkpoint outputs/baseline/best.pt
-python validate.py --submission-dir sample_submission --device auto
-python package.py
-```
+Locally (Python 3.11): `pip install -r requirements.txt`, `python download_models.py`, then the export
+scripts in `team/` (see [team/README.md](team/README.md)).
 
-The export target defaults to `sample_submission/`. If results already exist there, use a new
-`--output-dir`. Replacing an existing ZIP with package requires an explicit `--force`.
+## Team
 
-```text
-sample_submission/
-  submission.py
-  submission.json              # {"api_version": 2}
-  baseline_model.py
-  inference_config.json
-  training_info.json
-  weights/mlp.pt
-  models/dinov2/                # Encoder weights + image preprocessor
-  models/mpnet/                 # Encoder weights + tokenizer
-```
+- Naufal Kamaruddin ([@naufalkmd](https://github.com/naufalkmd)): team lead; starter-kit translation, the
+  submission rules (interleaving, the gate and its variants), the final Colab build
+- 노준우 ([@njunu17](https://github.com/njunu17)): the first text rules (centrality, familiarity), SmolVLM
+  experiments, the event-order check, merge bounds, the audit and the validation log
+- 한경훈 ([@opolo17](https://github.com/opolo17)): SigLIP training and the three-seed SigLIP ensemble
+  (`team/kyounghoon/`)
+- 민수홍 ([@m2nx6](https://github.com/m2nx6)): SigLIP hybrid ranker (`exp6_submission.py`)
 
-`submission.py` must be at the top level of the ZIP. Do not add an extra parent folder named
-`sample_submission/` inside the ZIP. Training data, feature caches and training scripts do not go
-in the inference ZIP. For reproducibility inspection, keep this starter kit and the training
-settings and logic separately.
-
-Frozen encoders are stored as float16 to reduce submission size. CUDA inference runs in float16 and
-CPU inference in float32, and converting the storage precision can cause small numerical
-differences.
-
-The server supports the class interface below.
-
-```python
-class Submission:
-    def __init__(self, artifact_dir: str, device: str):
-        ...  # Load local models and the MLP only once
-
-    def predict(self, images, choices) -> list[str]:
-        ...  # All choice IDs in descending score order
-```
-
-`images` is a list of RGB PIL images in time order, and `choices` is a list of
-`{"id": str, "text": str}`. Do not hard-code the number of choices or fix their IDs to A–E.
-`Submission.score()` computes a 0–1 score per choice, and `predict()` returns the IDs sorted by it.
-It does not update parameters, statistics or retrieval memory between evaluation episodes, and does
-not depend on the internet or external caches.
-
-In the organizers' repository, the ZIP contract and inference can be checked together using the
-actual server code.
-
-```bash
-python validate.py --zip sample_submission.zip --server-dir ../server --device cpu
-```
-
-This check prepares inputs taken from the original Train set in a temporary directory, and runs the
-server's `runner/execute.py` with an empty HF cache and a separate CWD. It does not read Test data.
-The current server's runtime and upload limits, and the settings needed for model submissions, are
-summarized in [SERVER_COMPATIBILITY.md](SERVER_COMPATIBILITY.md).
-
-## Where to make changes
-
-| File | What participants can change |
-| --- | --- |
-| `config.json` | Batch size, learning rate, MLP size, epochs, etc. |
-| `baseline_model.py` | Image aggregation, text encoding, concat MLP structure |
-| `dataset.py` | Data loading and negative sampling |
-| `train.py` | Training logic and loss |
-| `submission.py` | Per-choice scores and returned ranking |
-
-If you change the model or preprocessing, the same change must be reflected in export and
-inference. To train unfrozen encoders, the feature cache approach must change as well.
-The organizers' `documents/rules.md` takes precedence on rules.
-
-## Included sample weights
-
-The `sample_submission/` generated in this work contains **weights for functional checking only,
-from a 3-epoch run on 12 original Train episodes (10 train, 2 validation)**. They do not represent
-performance from full Train training. For real use, train on the full Train set, then export to a
-new directory and submit that.
-
-Training results and provenance are in `outputs/smoke/`, and the submission's training information
-is in `sample_submission/training_info.json`.
+The baseline code at the repository root is the organizers' starter kit; commit `a9a4179` is the kit as we
+received it.
